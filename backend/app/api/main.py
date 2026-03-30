@@ -6,11 +6,11 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, UploadFile
 
-from ..src.herbs_detection.model import predict_top3 as pt_top3, predict_set as pt_set, load_model as load_model_pytorch
-from ..src.herbs_detection.model_sklearn import predict_top3 as sk_top3, predict_set as sk_set, load_model as load_model_sklearn
-from ..src.herbs_detection.model_pytorch_large import predict_top3 as ptl_top3, predict_set as ptl_set, load_model as load_model_pytorch_large
-from ..src.herbs_detection.model_tensorflow import predict_top3 as tf_top3, predict_set as tf_set, load_model as load_model_tensorflow
-from ..src.herbs_detection.model_illness import predict_top3 as illness_top3, predict_set as illness_set, load_model as load_model_illness
+from ..src.herbs_detection.model_gcs import predict_top3 as pt_top3, predict_set as pt_set, load_model as load_model_pytorch
+from ..src.herbs_detection.model_sklearn_gcs import predict_top3 as sk_top3, predict_set as sk_set, load_model as load_model_sklearn
+from ..src.herbs_detection.model_pytorch_large_gcs import predict_top3 as ptl_top3, predict_set as ptl_set, load_model as load_model_pytorch_large
+from ..src.herbs_detection.model_tensorflow_gcs import predict_top3 as tf_top3, predict_set as tf_set, load_model as load_model_tensorflow
+from ..src.herbs_detection.model_illness_gcs import predict_top3 as illness_top3, predict_set as illness_set, load_model as load_model_illness
 
 
 from loguru import logger

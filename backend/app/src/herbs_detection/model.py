@@ -11,27 +11,8 @@ from torchvision import models, transforms
 # ---------------------------------------------------------------------------
 # GCS download helper
 # ---------------------------------------------------------------------------
-_GCS_BUCKET   = os.getenv("GCS_BUCKET_NAME", "")
-_GCS_PREFIX   = os.getenv("GCS_MODELS_PREFIX", "models").rstrip("/")
-_GCS_PROJECT  = os.getenv("GCS_PROJECT", "bootcamparomatic")
+
 _MODEL_FILES  = ["resnet18_plants.pt", "label_encoder.pkl"]
-
-
-def _download_from_gcs(local_dir: Path) -> None:
-    """Download model files from GCS into local_dir."""
-    from google.cloud import storage  # lazy import — only needed when files are missing
-
-    logger.info("Downloading models from gs://{}/{}/", _GCS_BUCKET, _GCS_PREFIX)
-    client = storage.Client(project=_GCS_PROJECT)
-    bucket = client.bucket(_GCS_BUCKET)
-
-    local_dir.mkdir(parents=True, exist_ok=True)
-    for filename in _MODEL_FILES:
-        blob_name = f"{_GCS_PREFIX}/{filename}"
-        dest = local_dir / filename
-        logger.debug("  {} → {}", blob_name, dest)
-        bucket.blob(blob_name).download_to_filename(str(dest))
-    logger.info("GCS download complete.")
 
 
 # ---------------------------------------------------------------------------
@@ -47,26 +28,9 @@ def _resolve_model_dir() -> Path:
          - MODEL_PATH env var
          - backend/app/models/ relative to the source tree
     """
-    from .gcs_cache import is_cache_valid
-
-    # ── 1. Try GCS first ─────────────────────────────────────────────────
     logger.info("Resolving model directory...")
-    logger.info("_GCS_BUCKET = '{}'", _GCS_BUCKET)
-    if _GCS_BUCKET:
-        gcs_dest = Path.cwd() / "models/gcp_download"
-        if is_cache_valid(gcs_dest, _MODEL_FILES):
-            return gcs_dest
-        try:
-            _download_from_gcs(gcs_dest)
-            return gcs_dest
-        except Exception as exc:
-            logger.warning("GCS download failed ({}), falling back to local files.", exc)
-    # ── 2. Fallback: use pre-existing local files ─────────────────────────
-    fallback_candidates: list[Path] = []
 
-    env_path = os.getenv("MODEL_PATH")
-    if env_path:
-        fallback_candidates.append(Path(env_path))
+    fallback_candidates: list[Path] = []
 
     here = Path(__file__).resolve()
     fallback_candidates.append(here.parents[2] / "models")      # backend/app/models
@@ -84,7 +48,7 @@ def _resolve_model_dir() -> Path:
         "in backend/app/models/."
     )
 
-IMG_SIZE = 224
+IMG_SIZE = 400
 DEVICE   = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 _preprocess = transforms.Compose([
@@ -147,6 +111,15 @@ def _load_batch(img_paths: list[str]) -> torch.Tensor:
 # ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
+def predict(img_path: str) -> tuple[str, float]:
+    _ensure_loaded()
+    with torch.no_grad():
+        proba = torch.softmax(_model(_load_tensor(img_path)), dim=1).squeeze()
+    confidence, class_idx = proba.max(dim=0)
+    species = _le.inverse_transform([class_idx.item()])[0]
+    return species, round(confidence.item(), 4)
+
+
 def predict_top3(img_path: str) -> list[tuple[str, float]]:
     _ensure_loaded()
     with torch.no_grad():
