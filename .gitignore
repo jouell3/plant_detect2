@@ -1,0 +1,38 @@
+# Models
+models/
+models_sklearn/
+models_illness/
+models_pytorch_large/
+models_tensorflow/
+!models/.gitkeep
+data/
+notebooks/dataset_aromatic_duckduckgo/
+notebooks/dataset_test/
+
+# Env
+.env
+.envrc
+
+# GCP credentials — never commit
+*.json
+service-account*.json
+*-credentials.json
+mlartifacts
+mlflow-artifacts
+mlruns
+mlflow.db
+!frontend/fiches.json
+!frontend/fiches_ill.json
+!frontend/suggestions.json
+
+# python
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+*.venv
+venv/
+ENV/
+env/
+.venv/
