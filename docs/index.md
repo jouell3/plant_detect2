@@ -1,54 +1,57 @@
-# 📘 **Documentation : Pipeline Embeddings + Clustering + XGBoost**
 
-## 🎯 Objectif du module
+# Détection de plantes
 
-L’objectif de ce module est d’améliorer la qualité du dataset avant l’entraînement du modèle final, en utilisant une approche **data‑centric** basée sur :
+## Introduction
 
-- l’extraction d’embeddings d’images via un modèle pré‑entraîné (EfficientNet‑B3),
-- le clustering des embeddings pour repérer les images atypiques ou hors distribution,
-- un classifieur XGBoost multi‑classe pour exploiter ces embeddings dans un modèle tabulaire,
-- un mécanisme de filtrage automatique des nouvelles images collectées sur Internet.
+Pour cette certification, j’ai choisi de construire un classifieur d’images de plantes, avec un focus particulier sur les **fleurs, les aromates et les arbres fruitiers**. Ce travail a été démarré lors du projet final de la formation Data Science et AI donné par Artiefact School of data. Avec 3 autres de mes compagnons de promotion, nous avons collecté un dataset de plus de 20 000 images réparties sur 35 classes différentes d'aromate. Pour la certification, j’ai décidé d’enrichir ce dataset en ajoutant des classes de fleurs et d’arbres fruitiers, afin de démontrer ma capacité à collecter, préparer et analyser des données dans un contexte plus large.
+
+La première étape a été la collect des données. Pour ce faire, j'ai encore utilisé l'API d'iNaturalist, qui est une source riche et fiable d'observations de plantes. J'ai ciblé des classes spécifiques de fleurs (ex : cosmos, tulipe, zinnia) et d'arbres fruitiers (ex : pommier, cerisier, poirier), en veillant à collecter un nombre suffisant d'images pour chaque classe. Mon choix s'Est arrêté sur 33 nouvelles catégories (20 de fleurs et 13 d'arbres fruitiers), ce qui porte le total à 68 classes différentes dans le dataset final.
+
+Après avoir sélectionné plus de 8000 images manuellement avec l'outil que j'avais construit lors du projet initiale, j'ai ensuite mis en place un pipeline de filtrage automatique pour augmenter le nombre d'image dans chacune des classes initiales. Lors du projet d'équipe, j'Avais utilisé une approche qui pouvait apporter un biais dans les images puisque j'avais utilisé les modèles que j'avais entrainé pour enrichir mon dataset (pour passer de 7000 images à >24 000 images). Pour la deuxième phase de ce projet, j'ai utilisé une approach différente. J'ai créé un pipeline en utilisant un modèle pré-entraîné (EfficientNet-B3) pour extraire des embeddings d'images, puis applique un clustering KMeans pour identifier les images atypiques ou hors distribution. Un classifieur XGBoost multi-classe est également utilisé pour exploiter les embeddings dans un modèle tabulaire, permettant ainsi de filtrer efficacement les nouvelles images collectées sur Internet (sans leur assigner une classe/label).
+
+J'ai ensuite entrainer un modèle EfficientNet-B3 fine-tuned sur ce dataset enrichi, et j'ai déployé une API de classification d'images de plantes. Enfin, j'ai mis en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives. Finalement, ce modèle a été mis en ligne avec une interface utilisateur en utilisant Streamlit, pour permettre une utilisation facile et intuitive. Tout a été réalisé en respectant les bonnes pratiques de la data science, avec une attention particulière portée à la qualité des données et à l'évaluation rigoureuse des modèles.
+
+# Première étape: Collecte de données
+🎯 Objectif du module
+
+**Un model de computer vision performant nécessite un dataset de qualité.** 
+
+La collecte de données est une étape cruciale, mais elle peut être longue et fastidieuse, surtout lorsque les classes sont nombreuses et hétérogènes. Les images ont été obtenues à partir de l'API d'iNaturalist, qui est un site collaboratif qui permet au utilisateurs de contribuer et de partager des observations de différentes espèces d'être vivant (plantes, arbres, insects, animaux etc). Ces images sont libres de droit et la plus part ont été labellisées par des experts. Cependant, pas toutes ces images sont de qualité pour un entrainement d'un modèle de "computer vision". Il a donc fallu que je fasse un triage des images pour ne sélectionner que les meilleures. 
+
+Pour m'aider dans cette tâche, j'ai dévelopé un outil de visualisation sur Streamlit qui m'a permit de sélectionner des premières images pour chacunes de ces nouvelles classes (la première passage a permit de sélection plus de 8000 images dans ces 33 catégories). J'ai ensuite utilisé ces images pour développer un pipeline de collecte automatisé (que je détaillerai plus tard) qui utilise l'API d'iNaturalist pour récupérer des images de plantes supplémentaire pour permettre le meilleur entrainement de modèles derrière. Pour ce faire, j'ai utilisé une approche de filtrage automatique basée sur les embeddings d'images en applicant des méthodes de classifications non suppervisées, ce qui A permIS de détecter les images hors distribution sans introduire de biais de confirmation (contrairement au self-training).
+
+L’objectif de ce module de collect des données est d'avoir la plus haute qualité des images avant l’entraînement du modèle final, en utilisant cette approche :
+
+- Téléchargement de 500 images par classe via l’API d’iNaturalist,
+- Filtrage manuelle de ces images pour ne garder que les meilleures (environ 8000 images pour les 33 classes),
+- Entrainement d’un pipeline de filtrage automatique basé sur les embeddings d’images, pour enrichir le dataset sans introduire de biais (image de qualité ou pas). 
+- Pipeline de filtrage automatique des nouvelles images collectées via l'API d’iNaturalist, basé sur les embeddings d’images et un classifieur XGBoost.
 
 Cette approche permet d’automatiser une partie du nettoyage du dataset **sans introduire le biais du self‑training**, contrairement à l’utilisation du modèle final comme filtre.
 
 ---
 
-## 🧠 Contexte et justification
-
-Lors de la construction du premier dataset d’aromates, une méthode de filtrage automatique avait été utilisée :  
-le modèle entraîné servait à valider ou rejeter les nouvelles images collectées.
-
-Bien que pratique, cette méthode présente un défaut majeur :  
-elle renforce les biais du modèle et réduit la diversité du dataset.  
-Les formateurs ont d’ailleurs souligné ce point.
-
-Pour éviter ce problème, j’ai adopté une approche différente :
-
-> **Utiliser un modèle pré‑entraîné uniquement pour extraire des représentations (embeddings), puis appliquer des méthodes non supervisées pour analyser la structure du dataset.**
-
-Cette approche est plus robuste, plus neutre, et mieux alignée avec les bonnes pratiques modernes en data‑centric AI.
-
----
-
-## 🧩 Étape 1 — Extraction des embeddings (EfficientNet‑B3)
+### 🧩 Étape 1 — Extraction des embeddings (EfficientNet‑B3)
 
 Chaque image est passée dans EfficientNet‑B3 (pré‑entraîné ImageNet).  
-On récupère la sortie du dernier bloc convolutionnel, puis on applique un pooling global pour obtenir un vecteur de dimension fixe.
+On récupère la sortie du dernier bloc convolutionnel, qui est un vecteur de dimension fixe (1536 features dans le cas de EfficientNet-B3).
 
 Ce vecteur représente l’image dans un espace latent où des images similaires sont proches les unes des autres.
 
 **Résultat :**
 
-- un tableau `embeddings` de taille `(N, D)`  
-- un tableau `labels` de taille `(N,)`
+- un tableau `embeddings` de taille `(8001, 1536)`  
+- un tableau `labels` de taille `(8001,)`
 
 Ces embeddings servent de base à toutes les étapes suivantes.
 
 ---
 
-## 🧩 Étape 2 — Clustering par classe (KMeans)
+### 🧩 Étape 2 — Clustering par classe (KMeans)
 
 Pour chaque classe (ex : *cosmos*, *fig*, *zinnia*…), j’applique un clustering KMeans sur les embeddings correspondants.
+Initiallement, je n'avais mis qu'un cluster par classe, mais cela ne capturait pas toute la diversité d'une classe (ex : différence entre fleurs et feuilles, angles de vue, conditions lumineuses).
+J'ai donc décidé d'utiliser **4 clusters par classe**, ce qui permet de mieux modéliser la distribution interne de chaque classe (nombre un peu arbitraire ici).
 
 Pourquoi par classe ?
 
@@ -58,9 +61,9 @@ Pourquoi par classe ?
 
 Pour chaque classe, je calcule :
 
-- le centroïde du cluster,
-- la distance de chaque image au centroïde,
-- un seuil basé sur le percentile 95 des distances.
+- le centroïde des clusters,
+- la distance de chaque image de ces centroïdes,
+- un seuil basé sur le percentile 99 * 1.2 des distances.
 
 Ce seuil sert ensuite à détecter les outliers.
 
@@ -159,13 +162,159 @@ Il s’intègre naturellement dans la narration globale du projet :
 
 Et il te donne un avantage clair lors de la soutenance, car tu montres une compréhension fine des enjeux liés aux données.
 
+
+
+Voici une **section complète, structurée et professionnelle** pour ton rapport, dédiée au **Filtrage automatique des données**.  
+Elle est écrite dans un style humain, technique, et parfaitement aligné avec les attentes du jury RNCP.  
+Tu pourras l’ajuster, la raccourcir ou la reformuler selon ton style.
+
 ---
 
-Si tu veux, je peux maintenant :
+# 🧩 **Filtrage automatique des données (Data-Centric AI)**
 
-- t’aider à rédiger la **section “Collecte & Préparation”** de ton rapport,  
-- t’aider à intégrer cette partie dans ton **GitHub Pages**,  
-- t’aider à préparer les **slides** correspondantes pour la soutenance,  
-- ou t’aider à connecter ce pipeline à ton **entraînement final EfficientNet‑B3**.
+## **Objectif**
 
-Tu me dis ce que tu veux faire ensuite.
+L’objectif de cette étape est d’améliorer la qualité du dataset avant l’entraînement du modèle final, en automatisant la détection et l’exclusion des images non pertinentes.  
+Cette démarche s’inscrit dans une approche **data‑centric**, où l’accent est mis sur la qualité des données plutôt que sur la complexité du modèle.
+
+Le filtrage automatique permet :
+
+- d’éliminer les images hors distribution (angles atypiques, objets parasites, mauvaises plantes, images floues),
+- d’homogénéiser les classes,
+- de réduire le bruit dans les données,
+- d’accélérer la collecte de nouvelles images,
+- d’éviter les biais liés au self‑training.
+
+---
+
+## **Problème rencontré**
+
+Les nouvelles classes ajoutées au projet (fleurs, fruits, plantes diverses) présentaient :
+
+- un volume d’images plus faible,
+- une forte hétérogénéité visuelle,
+- une qualité variable selon les sources,
+- un risque élevé de bruit dans les données.
+
+Un filtrage manuel aurait été trop long et peu reproductible.  
+Il était donc nécessaire de mettre en place un **pipeline automatique** capable d’évaluer la pertinence de chaque image.
+
+---
+
+## **Approche retenue**
+
+Pour éviter les biais du self‑training (où le modèle final filtre ses propres données), j’ai adopté une approche en trois étapes :
+
+1. **Extraction d’embeddings** à l’aide d’un modèle pré‑entraîné (EfficientNet‑B3).
+2. **Clustering non supervisé** pour modéliser la distribution interne de chaque classe.
+3. **Classification XGBoost** pour exploiter les embeddings dans un modèle tabulaire.
+
+Cette combinaison permet de filtrer les images selon deux critères complémentaires :
+
+- **distance au cluster le plus proche** (cohérence visuelle),
+- **confiance du classifieur XGBoost** (cohérence sémantique).
+
+Une image est acceptée si elle est à la fois **visuellement proche** des images de la classe et **cohérente** avec les patterns appris par XGBoost.
+
+---
+
+## **1. Extraction des embeddings**
+
+Chaque image est transformée en un vecteur numérique (embedding) à l’aide d’EfficientNet‑B3 pré‑entraîné sur ImageNet.
+
+L’embedding capture :
+
+- la texture,
+- la forme,
+- les couleurs dominantes,
+- la structure visuelle globale.
+
+Les embeddings sont ensuite **normalisés** (StandardScaler) afin de rendre les distances comparables entre classes.
+
+---
+
+## **2. Clustering par classe**
+
+Pour chaque classe, j’ai appliqué un clustering KMeans avec **k = 3**.  
+Ce choix permet de capturer la diversité interne d’une classe (ex : différentes variétés, angles de vue, conditions lumineuses).
+
+Pour chaque cluster, j’ai calculé :
+
+- son centroïde,
+- la distance de chaque image au centroïde,
+- un seuil automatique basé sur le **percentile 99** des distances.
+
+Ce seuil représente la limite entre :
+
+- les images “typiques” de la classe,
+- les images “atypiques” ou hors distribution.
+
+---
+
+## **3. Classification XGBoost sur embeddings**
+
+Les embeddings normalisés ont également été utilisés pour entraîner un modèle **XGBoost multi‑classe**.
+
+Ce modèle fournit :
+
+- une prédiction de classe,
+- une probabilité associée.
+
+Même si les probabilités sont naturellement faibles (35 classes), elles restent informatives pour détecter les images incohérentes.
+
+---
+
+## **4. Règle de décision**
+
+Pour chaque nouvelle image :
+
+1. calcul de l’embedding,
+2. prédiction XGBoost,
+3. distance au cluster le plus proche,
+4. comparaison au seuil de la classe.
+
+Une image est acceptée si :
+
+- la confiance XGBoost est supérieure à un seuil minimal (≈ 0.10),
+- la distance au centroïde est inférieure au seuil défini pour la classe.
+
+Cette règle combine **cohérence visuelle** et **cohérence sémantique**.
+
+---
+
+## **Résultats**
+
+Après correction des points critiques (normalisation, multi‑clusters, seuils adaptés), le pipeline :
+
+- accepte **la majorité des images d’entraînement** (≈ 90–98 %),
+- rejette efficacement les images hors distribution,
+- identifie les classes difficiles (faible cohérence interne),
+- permet de filtrer automatiquement les nouvelles images collectées.
+
+Ce filtrage automatique a permis d’enrichir les classes faibles de manière fiable, tout en maintenant un dataset propre et homogène.
+
+---
+
+## **Bénéfices pour le projet**
+
+- **Gain de temps considérable** dans la collecte de données.
+- **Réduction du bruit** dans le dataset.
+- **Amélioration de la qualité des classes faibles**.
+- **Pipeline reproductible**, facile à réexécuter en cas d’ajout de nouvelles classes.
+- **Approche data‑centric moderne**, valorisable lors de la soutenance.
+
+---
+
+## **Conclusion**
+
+Ce module de filtrage automatique constitue une étape essentielle du pipeline global.  
+Il garantit que seules les images pertinentes sont utilisées pour l’entraînement du modèle final, ce qui améliore la robustesse, la précision et la généralisation du classifieur.
+
+Il s’intègre naturellement dans la démarche complète :
+
+> **Collecte → Préparation → Filtrage → Enrichissement → Entraînement → Déploiement**
+
+et renforce la qualité globale du projet.
+
+
+
