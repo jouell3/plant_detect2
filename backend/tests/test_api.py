@@ -1,171 +1,122 @@
-"""
-Tests for the FastAPI endpoints defined in app/api/main.py.
-
-All ML models are replaced by lightweight stubs via the autouse fixture in
-conftest.py, so no weights are loaded and no GCS access is needed.
-"""
+# backend/tests/test_api.py
 import pytest
 from fastapi.testclient import TestClient
 
 from app.api.main import api
-from tests.conftest import make_image_bytes, HERB_TOP3, ILLNESS_TOP3
+from tests.conftest import make_image_bytes, TOP3_STUB, TOP1_STUB
+from herbs_detection.model_registry import ENABLED_KEYS
 
 
-# ---------------------------------------------------------------------------
-# Shared test client
-# ---------------------------------------------------------------------------
 @pytest.fixture
 def client():
     with TestClient(api) as c:
         yield c
 
 
-# ---------------------------------------------------------------------------
-# GET /
-# ---------------------------------------------------------------------------
 class TestRoot:
     def test_returns_200(self, client):
-        r = client.get("/")
-        assert r.status_code == 200
+        assert client.get("/").status_code == 200
 
-    def test_returns_hello_world(self, client):
-        assert client.get("/").json() == {"message": "Hello World"}
+    def test_lists_enabled_models(self, client):
+        assert set(client.get("/").json()["models"]) == set(ENABLED_KEYS)
 
 
-# ---------------------------------------------------------------------------
-# POST /predict_herb
-# ---------------------------------------------------------------------------
-class TestPredictHerb:
-    def _post(self, client, suffix=".jpg"):
+class TestListModels:
+    def test_returns_all_enabled(self, client):
+        data = client.get("/models").json()
+        assert len(data) == len(ENABLED_KEYS)
+        assert all("key" in m and "img_size" in m for m in data)
+
+
+class TestPredict:
+    def _post(self, client, models="all", top_k=3, suffix=".jpg"):
         img = make_image_bytes(suffix)
         return client.post(
-            "/predict_herb",
+            "/predict",
             files={"file": (f"plant{suffix}", img, "image/jpeg")},
+            data={"models": models, "top_k": top_k},
         )
 
     def test_status_200(self, client):
         assert self._post(client).status_code == 200
 
-    def test_response_has_four_model_keys(self, client):
-        data = self._post(client).json()
-        assert set(data.keys()) == {"pytorch", "sklearn", "pytorch_large", "tensorflow"}
+    def test_all_models_returned_by_default(self, client):
+        returned = {p["model"] for p in self._post(client).json()["predictions"]}
+        assert returned == set(ENABLED_KEYS)
 
-    def test_each_model_returns_three_predictions(self, client):
-        data = self._post(client).json()
-        for model_preds in data.values():
-            assert len(model_preds) == 3
+    def test_single_model_selection(self, client):
+        data = self._post(client, models="convnext_tiny").json()
+        assert len(data["predictions"]) == 1
+        assert data["predictions"][0]["model"] == "convnext_tiny"
+
+    def test_multiple_model_selection(self, client):
+        returned = {p["model"] for p in
+                    self._post(client, models="convnext_tiny,resnet50").json()["predictions"]}
+        assert returned == {"convnext_tiny", "resnet50"}
+
+    def test_top3_default(self, client):
+        assert len(self._post(client).json()["predictions"][0]["top3"]) == 3
+
+    def test_top_k_one(self, client):
+        assert len(self._post(client, top_k=1).json()["predictions"][0]["top3"]) == 1
 
     def test_prediction_shape(self, client):
-        data = self._post(client).json()
-        for pred in data["pytorch"]:
-            assert "species" in pred
-            assert "confidence" in pred
+        pred = self._post(client).json()["predictions"][0]
+        assert "model" in pred and "top3" in pred
+        assert "class" in pred["top3"][0] and "confidence" in pred["top3"][0]
 
-    def test_prediction_values_match_stub(self, client):
-        data = self._post(client).json()
-        expected = [{"species": s, "confidence": c} for s, c in HERB_TOP3]
-        assert data["pytorch"] == expected
+    def test_unknown_model_returns_422(self, client):
+        assert self._post(client, models="does_not_exist").status_code == 422
 
     def test_accepts_png(self, client):
         assert self._post(client, suffix=".png").status_code == 200
 
 
-# ---------------------------------------------------------------------------
-# POST /predict_illness
-# ---------------------------------------------------------------------------
-class TestPredictIllness:
-    def _post(self, client):
+class TestPredictBatch:
+    def _post(self, client, n=2, models="all"):
+        img = make_image_bytes()
+        files = [("files", (f"img{i}.jpg", img, "image/jpeg")) for i in range(n)]
+        return client.post("/predict-batch", files=files, data={"models": models})
+
+    def test_status_200(self, client):
+        assert self._post(client).status_code == 200
+
+    def test_one_result_per_image(self, client):
+        assert len(self._post(client, n=3).json()) == 3
+
+    def test_result_has_filename(self, client):
+        assert self._post(client, n=1).json()[0]["filename"] == "img0.jpg"
+
+    def test_all_models_present(self, client):
+        returned = {p["model"] for p in self._post(client, n=1).json()[0]["predictions"]}
+        assert returned == set(ENABLED_KEYS)
+
+    def test_model_selection(self, client):
+        result = self._post(client, n=1, models="convnext_tiny").json()[0]
+        assert len(result["predictions"]) == 1
+        assert result["predictions"][0]["model"] == "convnext_tiny"
+
+
+class TestExplore:
+    def _post(self, client, top_k=3):
         img = make_image_bytes()
         return client.post(
-            "/predict_illness",
+            "/explore",
             files={"file": ("plant.jpg", img, "image/jpeg")},
+            data={"top_k": top_k},
         )
 
     def test_status_200(self, client):
         assert self._post(client).status_code == 200
 
-    def test_response_has_pytorch_key(self, client):
-        data = self._post(client).json()
-        assert "pytorch" in data
-        assert len(data["pytorch"]) == 3
+    def test_contains_all_models(self, client):
+        returned = {p["model"] for p in self._post(client).json()["predictions"]}
+        assert returned == set(ENABLED_KEYS)
 
-    def test_prediction_shape(self, client):
-        for pred in self._post(client).json()["pytorch"]:
-            assert "illness" in pred
-            assert "confidence" in pred
+    def test_filename_in_response(self, client):
+        assert self._post(client).json()["filename"] == "plant.jpg"
 
-    def test_prediction_values_match_stub(self, client):
-        data = self._post(client).json()
-        expected = [{"illness": s, "confidence": c} for s, c in ILLNESS_TOP3]
-        assert data["pytorch"] == expected
-
-
-# ---------------------------------------------------------------------------
-# POST /predict-set
-# ---------------------------------------------------------------------------
-class TestPredictSet:
-    def _post(self, client, n=2):
-        img = make_image_bytes()
-        files = [
-            ("files", (f"img{i}.jpg", img, "image/jpeg"))
-            for i in range(n)
-        ]
-        return client.post("/predict-set", files=files)
-
-    def test_status_200(self, client):
-        assert self._post(client).status_code == 200
-
-    def test_returns_one_result_per_image(self, client):
-        assert len(self._post(client, n=3).json()) == 3
-
-    def test_result_has_filename(self, client):
-        data = self._post(client, n=1).json()
-        assert data[0]["filename"] == "img0.jpg"
-
-    def test_result_has_all_model_keys(self, client):
-        data = self._post(client, n=1).json()[0]
-        assert set(data.keys()) == {"filename", "pytorch", "sklearn", "pytorch_large", "tensorflow"}
-
-    def test_prediction_shape(self, client):
-        pred = self._post(client, n=1).json()[0]["pytorch"]
-        assert "species" in pred
-        assert "confidence" in pred
-
-    def test_prediction_values_match_stub(self, client):
-        pred = self._post(client, n=1).json()[0]["pytorch"]
-        assert pred == {"species": "Basilic", "confidence": 0.9}
-
-    def test_single_image(self, client):
-        assert len(self._post(client, n=1).json()) == 1
-
-
-# ---------------------------------------------------------------------------
-# POST /predict-set_illness
-# ---------------------------------------------------------------------------
-class TestPredictSetIllness:
-    def _post(self, client, n=2):
-        img = make_image_bytes()
-        files = [
-            ("files", (f"img{i}.jpg", img, "image/jpeg"))
-            for i in range(n)
-        ]
-        return client.post("/predict-set_illness", files=files)
-
-    def test_status_200(self, client):
-        assert self._post(client).status_code == 200
-
-    def test_returns_one_result_per_image(self, client):
-        assert len(self._post(client, n=3).json()) == 3
-
-    def test_result_has_filename(self, client):
-        data = self._post(client, n=1).json()
-        assert data[0]["filename"] == "img0.jpg"
-
-    def test_prediction_shape(self, client):
-        pred = self._post(client, n=1).json()[0]["pytorch"]
-        assert "illness" in pred
-        assert "confidence" in pred
-
-    def test_prediction_values_match_stub(self, client):
-        pred = self._post(client, n=1).json()[0]["pytorch"]
-        assert pred == {"illness": "Healthy", "confidence": 0.85}
+    def test_each_entry_has_rank(self, client):
+        entries = self._post(client).json()["predictions"][0]["top_k"]
+        assert entries[0]["rank"] == 1
+        assert entries[1]["rank"] == 2
