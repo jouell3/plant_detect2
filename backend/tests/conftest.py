@@ -39,21 +39,18 @@ def mock_all_models(monkeypatch):
     monkeypatch.setattr(api_mod, "load_model_pytorch", lambda: None)
     monkeypatch.setattr(api_mod, "load_model_sklearn", lambda: None)
     monkeypatch.setattr(api_mod, "load_model_pytorch_large", lambda: None)
-    monkeypatch.setattr(api_mod, "load_model_tensorflow", lambda: None)
     monkeypatch.setattr(api_mod, "load_model_illness", lambda: None)
 
     # Single-image prediction stubs
     monkeypatch.setattr(api_mod, "pt_top3", lambda path: HERB_TOP3)
     monkeypatch.setattr(api_mod, "sk_top3", lambda path: HERB_TOP3)
     monkeypatch.setattr(api_mod, "ptl_top3", lambda path: HERB_TOP3)
-    monkeypatch.setattr(api_mod, "tf_top3", lambda path: HERB_TOP3)
     monkeypatch.setattr(api_mod, "illness_top3", lambda path: ILLNESS_TOP3)
 
     # Batch prediction stubs
     monkeypatch.setattr(api_mod, "pt_set", _herb_set)
     monkeypatch.setattr(api_mod, "sk_set", _herb_set)
     monkeypatch.setattr(api_mod, "ptl_set", _herb_set)
-    monkeypatch.setattr(api_mod, "tf_set", _herb_set)
     monkeypatch.setattr(api_mod, "illness_set", _illness_set)
 
 
