@@ -29,8 +29,8 @@ from utils import (
 
 st.set_page_config(page_title="Batch Predict", layout="wide")
 
-API_URL = os.environ.get("API_URL", "https://plant-detect-backend-649164185154.europe-west1.run.app")
-#API_URL = "http://localhost:8080"
+#API_URL = os.environ.get("API_URL", "https://plant-detect-backend-649164185154.europe-west1.run.app")
+API_URL = "http://localhost:8080"
 #API_URL = "https://herb-predictor-966041648100.europe-west1.run.app"
 RETRY_DELAYS_SECONDS = (0.8, 1.6)
 
@@ -75,31 +75,58 @@ def _display_species_name(species: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def cached_predict_top3(img_bytes: bytes, filename: str) -> dict:
-    """Call /predict_herb → {model: [{species, confidence}, ...]}."""
-    logger.info("predict_herb | file={}", filename)
+    """Call /predict and normalize to the page's internal shape:
+        {model_key: [{"species": str, "confidence": float}, ...]}
+
+    The API returns:
+        {"predictions": [
+            {"model": "...", "top3": [{"class": "...", "confidence": 0.9}, ...]},
+            ...
+        ]}
+    """
+    logger.info("predict | file={}", filename)
     response = post_with_retries(
-        url=f"{API_URL}/predict_herb",
+        url=f"{API_URL}/predict",
         files={"file": (filename, img_bytes, "image/jpeg")},
         timeout=60,
         retry_delays_seconds=RETRY_DELAYS_SECONDS,
-        log_message=f"predict_herb failed | file={filename}",
+        log_message=f"predict failed | file={filename}",
     )
-    return response.json()
+    payload = response.json()
+    return {
+        entry["model"]: [
+            {"species": p["class"], "confidence": p["confidence"]}
+            for p in entry.get("top3", [])
+        ]
+        for entry in payload.get("predictions", [])
+    }
 
 
 def fetch_predict_batch(files: list[dict]) -> dict:
-    """Call /predict-set → {filename: {model: {species, confidence}}}."""
-    logger.info("predict-set | {} files", len(files))
+    """Call /predict-batch and normalize to the page's internal shape:
+        {filename: {model_key: {"species": str, "confidence": float}}}
+
+    The API returns:
+        [
+          {"filename": "...",
+           "predictions": [{"model": "...", "class": "...", "confidence": 0.9}, ...]},
+          ...
+        ]
+    """
+    logger.info("predict-batch | {} files", len(files))
     response = post_with_retries(
-        url=f"{API_URL}/predict-set",
+        url=f"{API_URL}/predict-batch",
         files=[("files", (f["name"], f["bytes"], "image/jpeg")) for f in files],
         timeout=120,
         retry_delays_seconds=RETRY_DELAYS_SECONDS,
-        log_message="predict-set failed",
+        log_message="predict-batch failed",
     )
     results = response.json()
     return {
-        item["filename"]: {k: v for k, v in item.items() if k != "filename"}
+        item["filename"]: {
+            p["model"]: {"species": p["class"], "confidence": p["confidence"]}
+            for p in item.get("predictions", [])
+        }
         for item in results
     }
 

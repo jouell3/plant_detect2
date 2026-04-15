@@ -14,9 +14,10 @@ from i18n import get_language, render_language_selector
 from styles import COLORS, confidence_color, confidence_badge, styled_info_card, page_header
 from utils import post_with_retries, validate_image_file
 
-API_URL = os.environ.get("API_URL", "https://plant-detect-backend-649164185154.europe-west1.run.app")
-#API_URL = "http://localhost:8080"
+#API_URL = os.environ.get("API_URL", "https://plant-detect-backend-649164185154.europe-west1.run.app")
+API_URL = "http://localhost:8080"
 #API_URL = "https://herb-predictor-966041648100.europe-west1.run.app"
+#API_URL = "http://127.0.0.1:8000/"
 MAX_HISTORY_ITEMS = 20
 RETRY_DELAYS_SECONDS = (0.8, 1.6)
 
@@ -200,7 +201,7 @@ if st.button("🔍 Identify", type="primary", use_container_width=False):
             logger.info("predict_herb | file={}", uploaded_file.name)
             file_bytes = uploaded_file.getvalue()
             response = post_with_retries(
-                url=f"{API_URL}/predict_herb",
+                url=f"{API_URL}/predict",
                 files={"file": (uploaded_file.name, file_bytes, uploaded_file.type or "image/jpeg")},
                 timeout=60,
                 retry_delays_seconds=RETRY_DELAYS_SECONDS,
@@ -219,18 +220,18 @@ if st.button("🔍 Identify", type="primary", use_container_width=False):
             st.stop()
 
     data = response.json()  # {model: [{species, confidence}, ...]}
-    models_used = list(data.keys())
+    models_used = list({item["model"] for item in data["predictions"]})
     first_model = models_used[0]
     top_species = []
     mean_confidence = []
     good_models = []
-    for key in models_used:
-        top_species.append(data[key][0]["species"])
+    for i, key in enumerate(models_used):
+        top_species.append(data["predictions"][i]["top3"][0]["class"])
     top_species = max(set(top_species), key=top_species.count)  # Most common top species among models
     other_species = [s for s in top_species if s != top_species]
-    for key in models_used:
-        if data[key][0]["species"] == top_species:
-            mean_confidence.append(data[key][0]["confidence"])
+    for i, key in enumerate(models_used):
+        if data["predictions"][i]["top3"][0]["class"] == top_species:
+            mean_confidence.append(data["predictions"][i]["top3"][0]["confidence"])
             good_models.append(key)
     mean_confidence = sum(mean_confidence) / len(mean_confidence) if mean_confidence else 0.0
 
@@ -274,7 +275,7 @@ if prediction:
 
     # ── Display ───────────────────────────────────────────────────────────
     st.subheader("Results" if lang == "en" else "Resultats")
-    herb_found = [data[key][0]["species"] for key in models_used]
+    herb_found = [data["predictions"][i]["top3"][0]["class"] for i in range(len(models_used))]
     
     if len(set(herb_found)) == 2:
         st.warning(
@@ -379,12 +380,14 @@ if prediction:
     with st.expander("View prediction details" if lang == "en" else "Voir les details des predictions"):
         models_list = list(models_used)
         for i in range(0, len(models_list), 2):
+            
             grid_cols = st.columns(2)
             for j, key in enumerate(models_list[i:i+2]):
                 with grid_cols[j]:
                     st.markdown(f"#### **Model: {key.upper()}**" if lang == "en" else f"#### **Modele: {key.upper()}**")
-                    species    = data[key][0]["species"]
-                    confidence = data[key][0]["confidence"]
+                    species    = data["predictions"][i]["top3"][0]["class"]
+                    confidence = data["predictions"][i]["top3"][0]["confidence"]
+
                     color = confidence_color(confidence)
 
                     st.markdown(
@@ -395,7 +398,8 @@ if prediction:
                     )
 
                     st.markdown("**Top 3**")
-                    for rank, pred in enumerate(data[key], 1):
+                    for rank, pred in enumerate(data["predictions"][i]["top3"], 1):
                         bar_pct = int(pred["confidence"] * 100)
-                        st.markdown(f"**{rank}. {_display_species_name(pred['species'])}** — {pred['confidence']:.0%}")
+                        st.markdown(f"**{rank}. {_display_species_name(pred['class'])}** — {pred['confidence']:.0%}")
                         st.progress(bar_pct)
+                    i += 1

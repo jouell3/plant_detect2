@@ -9,6 +9,7 @@ new_model/
 data/
 notebooks/dataset_aromatic_duckduckgo/
 notebooks/dataset_test/
+wandb/
 
 # Env
 .env
