@@ -1,3 +1,8 @@
+---
+layout: default
+---
+
+
 # Monitoring des modèles de classification de plantes durant l'entrainement et après la mise en production
 
 ### 🎯 *Objectif du module*

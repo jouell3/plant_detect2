@@ -1,3 +1,8 @@
+---
+layout: default
+---
+
+
 # Génération d'une interface utilisateur pour l'utilisation des modèles de classification de plantes
 
 🎯 Objectif du module

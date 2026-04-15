@@ -1,3 +1,8 @@
+---
+layout: default
+---
+
+
 # Première étape: Collecte de données
 
 

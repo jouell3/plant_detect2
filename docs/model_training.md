@@ -1,3 +1,9 @@
+---
+layout: default
+---
+
+
+
 # Entrainement du modèle de classification de plantes
 
 ### 🎯 *Objectif du module*

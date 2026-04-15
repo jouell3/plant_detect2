@@ -1,3 +1,7 @@
+---
+layout: default
+---
+
 
 # Détection automatique de plantes par computer vision
 
