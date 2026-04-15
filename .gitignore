@@ -4,6 +4,7 @@ models_sklearn/
 models_illness/
 models_pytorch_large/
 models_tensorflow/
+new_model/
 !models/.gitkeep
 data/
 notebooks/dataset_aromatic_duckduckgo/
