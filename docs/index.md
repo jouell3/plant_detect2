@@ -26,9 +26,10 @@ Pour permttre le déployement de ce modèle et permettre à tous de l'utiliser, 
 
 
 
+
+
+---
 <br><br><br>
-
-
 
 <div align="center">
 

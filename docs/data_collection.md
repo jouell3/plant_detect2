@@ -143,3 +143,14 @@ Voici la distribution finale des classes dans le dataset après le filtrage auto
 
 ![Distribution des classes dans le dataset final](../data/figures/distributions.png)
 
+
+
+---
+<br><br><br>
+
+<div align="center">
+
+| ⬅ [Previous] | [⬆ Main page](index.md) | [Dataset Collection ➡](dataset_collection.md) |
+|-------------------------------|---------------------|-------------------------|
+
+</div>
