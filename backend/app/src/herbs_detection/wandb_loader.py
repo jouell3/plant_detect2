@@ -4,6 +4,7 @@ Mirrors the TTL-based pattern from the old gcs_cache.py.
 """
 import os
 import shutil
+import tempfile
 import time
 from pathlib import Path
 
@@ -45,7 +46,12 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None) -> P
     if cache_root is None:
         cache_root = Path.cwd() / "models" / "wandb"
 
-    local_dir = cache_root / artifact_name
+    # Validate artifact_name to prevent path traversal attacks
+    safe_name = Path(artifact_name).name
+    if not safe_name or safe_name != artifact_name:
+        raise ValueError(f"artifact_name must be a plain name, got: {artifact_name!r}")
+
+    local_dir = cache_root / safe_name
     pth_files = list(local_dir.glob("*.pth")) if local_dir.exists() else []
 
     if pth_files and is_cache_valid(local_dir, [pth_files[0].name]):
@@ -58,11 +64,23 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None) -> P
         ref = f"{entity_prefix}{_WANDB_PROJECT}/{artifact_name}:latest"
         run = wandb.init(project=_WANDB_PROJECT, job_type="inference",
                          reinit="finish_previous")
-        artifact = run.use_artifact(ref, type="model")
-        local_dir.mkdir(parents=True, exist_ok=True)
-        artifact.download(root=str(local_dir))
-        run.finish()
-        logger.info("Downloaded to {}.", local_dir)
+        try:
+            artifact = run.use_artifact(ref, type="model")
+
+            # Download to temp dir first to prevent cache poisoning if download fails
+            tmp_dir = cache_root / f"{safe_name}.tmp"
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            artifact.download(root=str(tmp_dir))
+
+            # Atomically replace the destination directory
+            if local_dir.exists():
+                shutil.rmtree(local_dir)
+            tmp_dir.rename(local_dir)
+
+            logger.info("Downloaded to {}.", local_dir)
+        finally:
+            run.finish()
     except Exception as exc:
         logger.warning("wandb download failed ({}). Trying local fallback.", exc)
         fallback = Path.cwd() / f"{artifact_name}.pth"
