@@ -1,15 +1,42 @@
 
-# Détection de plantes
+# Détection automatique de plantes par computer vision
 
 ## Introduction
 
-Pour cette certification, j’ai choisi de construire un classifieur d’images de plantes, avec un focus particulier sur les **fleurs, les aromates et les arbres fruitiers**. Ce travail a été démarré lors du projet final de la formation Data Science et AI donné par Artiefact School of data. Avec 3 autres de mes compagnons de promotion, nous avons collecté un dataset de plus de 20 000 images réparties sur 35 classes différentes d'aromate. Pour la certification, j’ai décidé d’enrichir ce dataset en ajoutant des classes de fleurs et d’arbres fruitiers, afin de démontrer ma capacité à collecter, préparer et analyser des données dans un contexte plus large.
+Pour cette certification, j’ai choisi de construire un classifieur d’images de plantes, avec un focus particulier sur les **fleurs, les aromates et les arbres fruitiers**. Ce travail a été démarré lors du projet final de la formation Data Science et AI donné par Artiefact School of data. Avec 3 autres de mes compagnons de promotion, nous avons collecté un dataset de plus de 20 000 images réparties sur 23 classes différentes d'aromate. Pour la certification, j’ai décidé d’enrichir ce dataset en ajoutant des classes de fleurs et d’arbres fruitiers (20 de fleurs et 13 d'arbres fruitiers), afin de démontrer ma capacité à collecter, préparer et analyser des données dans un contexte plus large. Un modèles a été entrainé sur ce dataset enrichi, et une API de classification d'images de plantes a été déployée. Enfin, j’ai mis en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives.
 
-La première étape a été la collect des données. Pour ce faire, j'ai encore utilisé l'API d'iNaturalist, qui est une source riche et fiable d'observations de plantes. J'ai ciblé des classes spécifiques de fleurs (ex : cosmos, tulipe, zinnia) et d'arbres fruitiers (ex : pommier, cerisier, poirier), en veillant à collecter un nombre suffisant d'images pour chaque classe. Mon choix s'Est arrêté sur 33 nouvelles catégories (20 de fleurs et 13 d'arbres fruitiers), ce qui porte le total à 68 classes différentes dans le dataset final.
 
-Après avoir sélectionné plus de 8000 images manuellement avec l'outil que j'avais construit lors du projet initiale, j'ai ensuite mis en place un pipeline de filtrage automatique pour augmenter le nombre d'image dans chacune des classes initiales. Lors du projet d'équipe, j'Avais utilisé une approche qui pouvait apporter un biais dans les images puisque j'avais utilisé les modèles que j'avais entrainé pour enrichir mon dataset (pour passer de 7000 images à >24 000 images). Pour la deuxième phase de ce projet, j'ai utilisé une approach différente. J'ai créé un pipeline en utilisant un modèle pré-entraîné (EfficientNet-B3) pour extraire des embeddings d'images, puis applique un clustering KMeans pour identifier les images atypiques ou hors distribution. Un classifieur XGBoost multi-classe est également utilisé pour exploiter les embeddings dans un modèle tabulaire, permettant ainsi de filtrer efficacement les nouvelles images collectées sur Internet (sans leur assigner une classe/label).
+Après avoir collecté totuyes ces images, j'ai ensuite entrainé un modèle pré-entrainé EfficientNet-B3 que j'ai adapté aux classes de plantes sélectionnées de ce dataset enrichi. J'ai monitoré au cours de cet entrainement les différentes métriques de mes modèles pour pouvoir prendre la décision de quel modèle sera utilisé pour la prochaine étape. Cette prochaine étape consiste justement a déployé ce modèle sur une API pour permettre à tous et chacun de l'utiliser pour faire la classification d'images de plantes. Finalement, pour assurer la qualité à long terme de mon modèle, j'ai mis en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives.
 
-J'ai ensuite entrainer un modèle EfficientNet-B3 fine-tuned sur ce dataset enrichi, et j'ai déployé une API de classification d'images de plantes. Enfin, j'ai mis en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives. Finalement, ce modèle a été mis en ligne avec une interface utilisateur en utilisant Streamlit, pour permettre une utilisation facile et intuitive. Tout a été réalisé en respectant les bonnes pratiques de la data science, avec une attention particulière portée à la qualité des données et à l'évaluation rigoureuse des modèles.
+Pour permttre le déployement de ce modèle et permettre à tous de l'utiliser, j'ai mis en ligne avec une interface utilisateur en utilisant Streamlit, pour permettre une utilisation facile et intuitive. Tout a été réalisé en respectant les bonnes pratiques de la data science, avec une attention particulière portée à la qualité des données et à l'évaluation rigoureuse des modèles.
+
+
+<br><br><br>
+### Pour permettre une navigation plus fluide dans ce rapport, voici une table des matières avec des liens vers les différentes sections :
+
+- [Collecte de données](data_collection.md)
+- [Entrainement du modèle](model_training.md)
+- [Déploiement du modèle](deploiement.md)
+- [Génération d'une interface utilisateur](frontend.md)
+- [Monitoring des modèles](MLops.md)
+
+
+
+<br><br><br>
+
+
+
+<div align="center">
+
+| ⬅ [Previous] | [⬆ Main page](index.md) | [Dataset Collection ➡](dataset_collection.md) |
+|-------------------------------|---------------------|-------------------------|
+
+</div>
+
+
+
+
+
 
 # Première étape: Collecte de données
 🎯 Objectif du module
@@ -18,7 +45,7 @@ J'ai ensuite entrainer un modèle EfficientNet-B3 fine-tuned sur ce dataset enri
 
 La collecte de données est une étape cruciale, mais elle peut être longue et fastidieuse, surtout lorsque les classes sont nombreuses et hétérogènes. Les images ont été obtenues à partir de l'API d'iNaturalist, qui est un site collaboratif qui permet au utilisateurs de contribuer et de partager des observations de différentes espèces d'être vivant (plantes, arbres, insects, animaux etc). Ces images sont libres de droit et la plus part ont été labellisées par des experts. Cependant, pas toutes ces images sont de qualité pour un entrainement d'un modèle de "computer vision". Il a donc fallu que je fasse un triage des images pour ne sélectionner que les meilleures. 
 
-Pour m'aider dans cette tâche, j'ai dévelopé un outil de visualisation sur Streamlit qui m'a permit de sélectionner des premières images pour chacunes de ces nouvelles classes (la première passage a permit de sélection plus de 8000 images dans ces 33 catégories). J'ai ensuite utilisé ces images pour développer un pipeline de collecte automatisé (que je détaillerai plus tard) qui utilise l'API d'iNaturalist pour récupérer des images de plantes supplémentaire pour permettre le meilleur entrainement de modèles derrière. Pour ce faire, j'ai utilisé une approche de filtrage automatique basée sur les embeddings d'images en applicant des méthodes de classifications non suppervisées, ce qui A permIS de détecter les images hors distribution sans introduire de biais de confirmation (contrairement au self-training).
+Pour m'aider dans cette tâche, j'ai dévelopé un outil de visualisation sur Streamlit qui m'a permit de sélectionner des premières images pour chacunes de ces nouvelles classes (la première passage a permit de sélection plus de 8000 images dans ces 33 catégories). J'ai ensuite utilisé ces images pour développer un pipeline de collecte automatisé (que je détaillerai plus tard) qui utilise l'API d'iNaturalist pour récupérer des images de plantes supplémentaire pour permettre le meilleur entrainement de modèles derrière. Pour ce faire, j'ai utilisé une approche de filtrage automatique basée sur les embeddings d'images en applicant des méthodes de classifications non suppervisées, ce qui a permis de détecter les images hors distribution sans introduire de biais de confirmation.
 
 L’objectif de ce module de collect des données est d'avoir la plus haute qualité des images avant l’entraînement du modèle final, en utilisant cette approche :
 
