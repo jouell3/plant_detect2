@@ -24,7 +24,8 @@ class TimmPredictor:
     def __init__(self, cfg: ModelConfig, cache_root: Path | None = None):
         self._cfg        = cfg
         self._cache_root = cache_root
-        self._model      = None
+        self._model: torch.nn.Module | None = None
+        self._load_error: Exception | None = None
         self._classes: list[str] = []
         self._img_size   = cfg.img_size
         self._ready      = threading.Event()
@@ -37,48 +38,62 @@ class TimmPredictor:
 
     def load(self) -> None:
         """Download artifact (if needed) and load weights into memory."""
-        local_dir = artifact_local_path(self._cfg.wandb_artifact, self._cache_root)
+        try:
+            local_dir = artifact_local_path(self._cfg.wandb_artifact, self._cache_root)
 
-        # Load class names from label encoder or classes.txt
-        encoder_files = list(local_dir.glob("*.pkl"))
-        if encoder_files:
-            with open(encoder_files[0], "rb") as f:
-                le = pickle.load(f)
-            self._classes = list(le.classes_)
-        else:
-            classes_file = local_dir / "classes.txt"
-            if classes_file.exists():
-                self._classes = classes_file.read_text().splitlines()
+            # Load class names from label encoder or classes.txt
+            encoder_files = list(local_dir.glob("*.pkl"))
+            if encoder_files:
+                with open(encoder_files[0], "rb") as f:
+                    le = pickle.load(f)
+                self._classes = list(le.classes_)
             else:
-                raise FileNotFoundError(
-                    f"No label encoder (*.pkl) or classes.txt in {local_dir}. "
-                    "Save one alongside the .pth file in the wandb artifact."
-                )
+                classes_file = local_dir / "classes.txt"
+                if classes_file.exists():
+                    self._classes = classes_file.read_text().splitlines()
+                else:
+                    raise FileNotFoundError(
+                        f"No label encoder (*.pkl) or classes.txt in {local_dir}. "
+                        "Save one alongside the .pth file in the wandb artifact."
+                    )
 
-        num_classes = len(self._classes)
-        pth_files   = list(local_dir.glob("*.pth"))
-        if not pth_files:
-            raise FileNotFoundError(f"No .pth file found in {local_dir}")
+            num_classes = len(self._classes)
+            pth_files   = list(local_dir.glob("*.pth"))
+            if not pth_files:
+                raise FileNotFoundError(f"No .pth file found in {local_dir}")
 
-        self._model = timm.create_model(
-            self._cfg.timm_name, pretrained=False, num_classes=num_classes
-        )
-        self._model.load_state_dict(torch.load(pth_files[0], map_location=DEVICE))
-        self._model.to(DEVICE)
-        self._model.train(False)   # sets inference mode (same as .eval())
-        self._ready.set()
-        logger.info("{} ready. device={} classes={}",
-                    self._cfg.key, DEVICE, num_classes)
+            self._model = timm.create_model(
+                self._cfg.timm_name, pretrained=False, num_classes=num_classes
+            )
+            self._model.load_state_dict(torch.load(pth_files[0], map_location=DEVICE))
+            self._model.to(DEVICE)
+            self._model.train(False)   # sets inference mode (same as .eval())
+            logger.info("{} ready. device={} classes={}",
+                        self._cfg.key, DEVICE, num_classes)
+        except Exception as exc:
+            self._load_error = exc
+            logger.error("Failed to load {}: {}", self._cfg.key, exc)
+        finally:
+            self._ready.set()
+
+    def _check_ready(self) -> None:
+        """Block until load() completes, then raise if it failed."""
+        self._ready.wait()
+        if self._load_error is not None:
+            raise RuntimeError(
+                f"Model {self._cfg.key} failed to load"
+            ) from self._load_error
 
     def predict_top3(self, img_path: str) -> list[tuple[str, float]]:
         """Return top-3 (class_name, confidence) for a single image."""
-        self._ready.wait()
+        self._check_ready()
         tensor = self._preprocess(
             Image.open(img_path).convert("RGB")
         ).unsqueeze(0).to(DEVICE)
         with torch.no_grad():
             proba = torch.softmax(self._model(tensor), dim=1).squeeze()
-        top3 = proba.topk(3)
+        k = min(3, len(self._classes))
+        top3 = proba.topk(k)
         return [
             (self._classes[i.item()], round(p.item(), 4))
             for i, p in zip(top3.indices, top3.values)
@@ -87,7 +102,7 @@ class TimmPredictor:
     def predict_set(self, img_paths: list[str],
                     batch_size: int = 32) -> list[tuple[str, float]]:
         """Return top-1 (class_name, confidence) for each image in a batch."""
-        self._ready.wait()
+        self._check_ready()
         results = []
         for start in range(0, len(img_paths), batch_size):
             chunk = img_paths[start: start + batch_size]
