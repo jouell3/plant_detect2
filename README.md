@@ -1,6 +1,39 @@
 # Plant Detect
 
-API de détection d'herbes aromatiques basée sur ResNet18 (PyTorch), déployée sur Google Cloud Run. Les fichiers modèles sont stockés sur Google Cloud Storage et téléchargés au démarrage du conteneur.
+API de reconnaissance de plantes (herbes aromatiques, fleurs, arbres fruitiers) basée sur 5 modèles de deep learning entraînés via la bibliothèque [`timm`](https://github.com/huggingface/pytorch-image-models) et servie par FastAPI sur Google Cloud Run. Les poids des modèles sont versionnés dans le registre [Weights & Biases](https://wandb.ai) et téléchargés à la demande au démarrage du conteneur.
+
+> **Évolution depuis le projet de groupe initial.**
+> La version d'origine reconnaissait 23 herbes aromatiques à partir d'un unique modèle ResNet18 stocké sur GCS. Cette version, réalisée dans le cadre d'une certification en data science / IA, étend le projet à **59 classes** (23 aromates + 19 fleurs + 16 arbres fruitiers) sur un dataset de **57 000+ images** collectées via l'API iNaturalist, avec **5 architectures benchmarkées** pour justifier le modèle retenu et une **migration complète GCS → wandb** pour le registre de modèles.
+
+---
+
+## Architecture
+
+```
+Utilisateur
+    │
+    │ (image)
+    ▼
+Frontend Streamlit  ──►  Backend FastAPI (Cloud Run)
+                               │
+                               │ (download .pth + label encoder à froid,
+                               │  cache TTL en local)
+                               ▼
+                      Weights & Biases Registry
+                        (5 artefacts versionnés)
+```
+
+### Modèles déployés
+
+| Clé API | Backbone | Résolution | Rôle |
+|---|---|---|---|
+| `convnext_tiny` | ConvNeXt-Tiny | 224 | Meilleur modèle du benchmark (95.4% val) |
+| `efficientnet_b3` | EfficientNet-B3 | 300 | Baseline moderne |
+| `efficientnet_b4` | EfficientNet-B4 | 380 | Variante plus profonde |
+| `mobilenetv3_large` | MobileNetV3-Large | 224 | Option low-latency |
+| `resnet50` | ResNet-50 | 224 | Baseline classique |
+
+Tous les modèles partagent le même encodeur de classes (59 classes, ordre alphabétique), généré par `torchvision.datasets.ImageFolder` lors de l'entraînement et sauvegardé comme `label_encoder.pkl` dans l'artefact wandb (ou `classes.txt` en fallback).
 
 ---
 
@@ -8,8 +41,9 @@ API de détection d'herbes aromatiques basée sur ResNet18 (PyTorch), déployée
 
 - Python 3.11+
 - Docker Desktop
-- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (`gcloud`)
+- [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (`gcloud`) pour le déploiement
 - Un projet GCP : `bootcamparomatic`
+- Un compte [Weights & Biases](https://wandb.ai) et une clé API
 
 ### Authentification GCP
 
@@ -19,6 +53,16 @@ gcloud auth application-default login
 gcloud config set project bootcamparomatic
 ```
 
+### Authentification wandb
+
+```bash
+export WANDB_API_KEY=<votre clé depuis wandb.ai/settings>
+export WANDB_PROJECT=certification
+export WANDB_ENTITY=<votre utilisateur wandb>
+```
+
+Ces variables doivent être disponibles au démarrage du backend pour permettre le téléchargement des artefacts.
+
 ---
 
 ## Structure
@@ -26,103 +70,139 @@ gcloud config set project bootcamparomatic
 ```
 backend/
   app/
-    api/         # FastAPI routes
-    models/      # fichiers modèles locaux (gitignorés)
+    api/
+      main.py                   # FastAPI — 5 endpoints
     src/
       herbs_detection/
-        model.py   # chargement modèle + inférence
+        model_registry.py       # Source de vérité : les 5 ModelConfig
+        timm_predictor.py       # Classe générique pour n'importe quel modèle timm
+        wandb_loader.py         # Download + cache TTL des artefacts wandb
+        __init__.py
+  tests/
+    conftest.py                 # Stubs TimmPredictor (pas de poids ni de GPU en test)
+    test_api.py
+    test_wandb_loader.py
+    test_timm_predictor.py
+  requirements.txt              # timm, wandb, torch, fastapi, ...
+  requirements-dev.txt          # pytest, httpx
+
+frontend/
+  main.py                       # Page d'accueil Streamlit (FR/EN)
+  pages/
+    0_Prediction_aromate.py     # Prédiction simple (une image)
+    1_Multiple_Predictions_Aromates.py  # Prédiction par lot
+    4_Image_Labelling.py        # Sélection manuelle pour datasets
+
 notebooks/
-  training_pytorch.ipynb  # entraînement + upload vers GCS
+  benchmark_models.ipynb        # Benchmark des 5 architectures + KFold + diagnostics
+  convnext_tiny_full_pipeline.ipynb  # Pipeline complet du modèle retenu (70/15/15)
+  confidence_exploration.ipynb  # Analyse statistique des scores de confiance (Colab-ready)
+
 docker/
   backend.Dockerfile
-scripts/
-  setup_gcs_bucket.sh
 ```
 
 ---
 
-## 1. Bucket GCS — setup
+## 1. Entraînement des modèles
 
-Le bucket héberge les fichiers `resnet18_plants.pt` et `label_encoder.pkl`.
+Deux notebooks couvrent le cycle d'entraînement, conçus pour tourner sur Google Colab (GPU T4/L4) :
 
-```bash
-bash scripts/setup_gcs_bucket.sh
-```
+| Notebook | Usage |
+|---|---|
+| `notebooks/benchmark_models.ipynb` | Entraîne et compare les 5 architectures, valide la stabilité par StratifiedKFold, produit les heatmaps F1 / précision et le test de McNemar pour la comparaison statistique |
+| `notebooks/convnext_tiny_full_pipeline.ipynb` | Pipeline complet du modèle gagnant sur split 70/15/15 (test set strictement réservé à l'évaluation finale) |
 
-Ce script :
-- Crée le service account `plant-detect-sa`
-- Crée le bucket `plant-detect-models` en `europe-west1`
-- Active le versioning
-- Accorde les droits `objectAdmin` au service account
-- Attache le service account au service Cloud Run (si déjà déployé)
+Chaque exécution logue ses hyperparamètres, métriques et courbes dans wandb. Les meilleurs checkpoints sont uploadés comme artefacts nommés `<model_key>_best` (par exemple `convnext_tiny_best`, `efficientnet_b3_best`, etc.) — noms utilisés tels quels par `model_registry.py`.
 
-> Variables configurables en tête du script : `GCP_PROJECT`, `GCS_BUCKET_NAME`, `GCP_REGION`, `CLOUD_RUN_SERVICE`, `GCP_SERVICE_ACCOUNT`
+> Ajouter `classes.txt` ou `label_encoder.pkl` à l'artefact est obligatoire : sans ce fichier le backend ne peut pas décoder les prédictions.
 
 ---
 
-## 2. Entraînement et upload du modèle
-
-Ouvrir `notebooks/training_pytorch.ipynb` et exécuter toutes les cellules dans l'ordre.
-
-La dernière cellule upload automatiquement `resnet18_plants.pt` et `label_encoder.pkl` vers `gs://plant-detect-models/models/`.
-
----
-
-## 3. Développement local
+## 2. Développement local
 
 ### Lancer l'API sans Docker
 
 ```bash
-make serve
+PYTHONPATH=backend/app/src uvicorn backend.app.api.main:api \
+  --reload --host 0.0.0.0 --port 8080
 ```
 
-### Lancer avec Docker (authentification GCP via ADC)
+Au démarrage, l'API charge les 5 modèles en parallèle dans des threads daemon. Les requêtes `/predict` bloquent sur un `threading.Event` jusqu'à ce que les poids soient prêts.
+
+### Lancer avec Docker
 
 ```bash
 make run
 ```
 
-Cela monte `~/.config/gcloud/application_default_credentials.json` dans le conteneur pour l'auth GCS.
+Monte `~/.config/gcloud/application_default_credentials.json` dans le conteneur et transmet `WANDB_API_KEY` via l'environnement.
 
-### Tester l'API
+### Endpoints
+
+| Méthode | Route | Description |
+|---|---|---|
+| GET | `/` | Santé + liste des modèles activés |
+| GET | `/models` | Détail de chaque modèle (key, timm_name, img_size) |
+| POST | `/predict` | Prédiction sur une image, top-k par modèle (paramètre `models=` pour filtrer) |
+| POST | `/predict-batch` | Prédiction par lot, top-1 par image par modèle |
+| POST | `/explore` | Top-K par modèle avec rang — destiné à la comparaison côte-à-côte dans le frontend |
+
+### Exemples
 
 ```bash
-make test
-# ou manuellement :
-curl -X POST http://localhost:8080/predict_herb \
+# Liste des modèles disponibles
+curl http://localhost:8080/models
+
+# Prédiction sur une image, tous les modèles, top-3
+curl -X POST http://localhost:8080/predict \
   -F "file=@data/raw/all_images/dill_0.jpg"
+
+# Deux modèles seulement, top-1
+curl -X POST http://localhost:8080/predict \
+  -F "file=@data/raw/all_images/dill_0.jpg" \
+  -F "models=convnext_tiny,efficientnet_b3" \
+  -F "top_k=1"
+
+# Exploration top-5 sur tous les modèles
+curl -X POST http://localhost:8080/explore \
+  -F "file=@data/raw/all_images/dill_0.jpg"
+
+# Batch — un seul modèle, deux images
+curl -X POST http://localhost:8080/predict-batch \
+  -F "files=@img1.jpg" \
+  -F "files=@img2.jpg" \
+  -F "models=convnext_tiny"
+```
+
+### Frontend Streamlit
+
+```bash
+cd frontend
+streamlit run main.py
 ```
 
 ---
 
-## 4. Tests
-
-### Installation des dépendances de test
+## 3. Tests
 
 ```bash
 cd backend
 pip install -r requirements-dev.txt
+PYTHONPATH=app/src pytest -v
 ```
 
-### Lancer tous les tests
-
-```bash
-cd backend
-pytest -v
-```
-
-### Tests disponibles
-
-| Fichier | Ce qui est testé |
+| Fichier | Périmètre |
 |---|---|
-| `tests/test_api.py` | Endpoints FastAPI (`/`, `/predict_herb`, `/predict_illness`, `/predict-set`, `/predict-set_illness`) |
-| `tests/test_deploy_script.py` | Fonctions du script `scripts/deploy_models.py` (`_pick_latest`, `build_sklearn_files`, `upload`) |
+| `tests/test_api.py` | Les 5 endpoints FastAPI, validation des paramètres `models=` et `top_k` |
+| `tests/test_timm_predictor.py` | Le prédicteur générique (cas top-3, batch, moins de 3 classes) |
+| `tests/test_wandb_loader.py` | Le cache TTL (miss / hit / expiration) |
 
-> Les tests ne chargent aucun poids de modèle et ne font aucun appel à GCS — toutes les fonctions ML sont remplacées par des stubs légers.
+Les tests stubbent entièrement `TimmPredictor` via `conftest.py` — aucun poids n'est chargé et aucun appel réseau n'est fait.
 
 ---
 
-## 5. Déploiement sur GCP
+## 4. Déploiement sur Google Cloud Run
 
 ### 4.1 Créer le repository Artifact Registry (une seule fois)
 
@@ -131,40 +211,40 @@ gcloud artifacts repositories create plant-detect \
   --repository-format=docker \
   --location=europe-west1 \
   --project=bootcamparomatic
-```
 
-Authentifier Docker :
-
-```bash
 gcloud auth configure-docker europe-west1-docker.pkg.dev
 ```
 
-### 4.2 Builder et pusher l'image
+### 4.2 Build et push de l'image
 
 ```bash
 make build_gcp
 ```
 
-Cela build l'image pour `linux/amd64` et la push vers Artifact Registry.
+Build l'image pour `linux/amd64` et la push vers Artifact Registry.
 
-### 4.3 Premier déploiement Cloud Run
+### 4.3 Premier déploiement
 
 ```bash
 gcloud run deploy plant-detect-backend \
   --image=europe-west1-docker.pkg.dev/bootcamparomatic/plant-detect/plant-detect-backend \
   --platform=managed \
   --region=europe-west1 \
-  --memory=2Gi \
-  --service-account=plant-detect-sa@bootcamparomatic.iam.gserviceaccount.com \
-  --set-env-vars GCS_BUCKET_NAME=plant-detect-models,GCS_MODELS_PREFIX=models,GCS_PROJECT=bootcamparomatic \
+  --memory=4Gi \
+  --cpu=2 \
+  --timeout=300 \
+  --set-env-vars WANDB_PROJECT=certification,WANDB_ENTITY=<votre-entity>,WANDB_CACHE_MAX_AGE_SECONDS=10800 \
+  --set-secrets WANDB_API_KEY=wandb-api-key:latest \
   --allow-unauthenticated
 ```
 
-> `--memory=2Gi` est requis pour charger PyTorch + ResNet18.
+> `--memory=4Gi` est nécessaire pour charger les 5 modèles en mémoire simultanément. Réduire la liste dans `model_registry.py` (via `enabled=False`) si la contrainte mémoire est trop forte.
+>
+> `WANDB_API_KEY` doit être stocké dans Secret Manager (`gcloud secrets create wandb-api-key --data-file=-` puis coller la clé, Ctrl+D).
 
-### 4.4 Mises à jour suivantes
+### 4.4 Mises à jour
 
-Après un nouvel entraînement, rebuilder et pusher suffit — Cloud Run déploie automatiquement la nouvelle image :
+Après un nouveau benchmark et l'upload d'un nouvel artefact dans wandb, rebuilder l'image suffit — le backend pullera automatiquement la dernière version au prochain démarrage (cache TTL de 3 h par défaut).
 
 ```bash
 make build_gcp
@@ -172,43 +252,12 @@ make build_gcp
 
 ---
 
-## 6. Mettre à jour la configuration du service
-
-### Changer les variables d'environnement
-
-```bash
-gcloud run services update plant-detect-backend \
-  --set-env-vars GCS_BUCKET_NAME=plant-detect-models,GCS_MODELS_PREFIX=models \
-  --region=europe-west1
-```
-
-### Changer le service account
-
-```bash
-gcloud run services update plant-detect-backend \
-  --service-account plant-detect-sa@bootcamparomatic.iam.gserviceaccount.com \
-  --region=europe-west1
-```
-
-### Augmenter la mémoire
-
-```bash
-gcloud run services update plant-detect-backend \
-  --memory=2Gi \
-  --region=europe-west1
-```
-
----
-
-## 7. Logs
+## 5. Logs
 
 ```bash
 make get_log_gcp
-```
 
-Ou en direct :
-
-```bash
+# ou en direct :
 gcloud run services logs tail plant-detect-backend \
   --region=europe-west1 \
   --project=bootcamparomatic
@@ -220,8 +269,16 @@ gcloud run services logs tail plant-detect-backend \
 
 | Variable | Défaut | Description |
 |---|---|---|
-| `GCS_BUCKET_NAME` | `plant-detect-models` | Bucket GCS contenant les modèles |
-| `GCS_MODELS_PREFIX` | `models` | Dossier dans le bucket |
-| `GCS_PROJECT` | `bootcamparomatic` | Projet GCP |
-| `MODEL_PATH` | `/tmp/plant_models` | Cache local des fichiers modèles |
-| `GOOGLE_APPLICATION_CREDENTIALS` | — | Chemin vers le fichier ADC (local uniquement) |
+| `WANDB_API_KEY` | — | Clé API Weights & Biases (obligatoire en production) |
+| `WANDB_PROJECT` | `certification` | Projet wandb contenant les artefacts |
+| `WANDB_ENTITY` | — | Utilisateur ou équipe propriétaire du registre |
+| `WANDB_CACHE_MAX_AGE_SECONDS` | `10800` (3 h) | TTL du cache local des artefacts |
+| `MODEL_PATH` | `models/wandb` | Dossier de cache local |
+| `GOOGLE_APPLICATION_CREDENTIALS` | — | ADC GCP (dev local uniquement) |
+
+---
+
+## Auteurs
+
+- Jimmy OUELLET (solo — version de certification)
+- Version initiale (groupe) : Jimmy OUELLET, Jaimes DE SOUSA GOMES, Thomas HEBERT, Edouard STEINER

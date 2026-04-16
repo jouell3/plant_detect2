@@ -219,7 +219,7 @@ if st.button("🔍 Identify", type="primary", use_container_width=False):
             logger.error("API HTTP error | {}", e)
             st.stop()
 
-    data = response.json()  # {model: [{species, confidence}, ...]}
+    data = response.json() 
     models_used = list({item["model"] for item in data["predictions"]})
     first_model = models_used[0]
     top_species = []
