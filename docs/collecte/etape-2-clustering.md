@@ -1,0 +1,26 @@
+---
+layout: default
+title: "Étape 2 — Clustering par classe"
+parent: "Collecte des données"
+nav_order: 2
+---
+
+# 🧩 Étape 2 — Clustering par classe (KMeans)
+
+Pour chaque classe (ex : *cosmos*, *fig*, *zinnia*…), j’applique un clustering KMeans sur les embeddings correspondants.
+Initiallement, je n'avais mis qu'un cluster par classe, mais cela ne capturait pas toute la diversité d'une classe (ex : différence entre fleurs et feuilles, angles de vue, conditions lumineuses).
+J'ai donc décidé d'utiliser **4 clusters par classe**, ce qui permet de mieux modéliser la distribution interne de chaque classe (nombre un peu arbitraire ici).
+
+Pourquoi par classe ?
+
+- les images d’une même classe forment naturellement un cluster compact,
+- cela permet de repérer les images atypiques (angles étranges, objets parasites, mauvaises plantes),
+- cela permet de définir un **seuil automatique** pour filtrer les futures images.
+
+Pour chaque classe, je calcule :
+
+- le centroïde des clusters,
+- la distance de chaque image de ces centroïdes,
+- un seuil basé sur le percentile 99 * 1.2 des distances.
+
+Ce seuil sert ensuite à détecter les outliers.
