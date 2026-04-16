@@ -1,1 +1,8 @@
+theme: "just-the-docs"
 markdown: GFM
+
+# Optional but recommended
+just_the_docs:
+  logo: "/figures/logo.jpg"   # if you want a logo
+  search_enabled: true
+
