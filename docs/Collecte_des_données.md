@@ -37,7 +37,7 @@ Cette approche permet d’automatiser une partie du nettoyage du dataset **sans 
 
 <br>
 
-Les sous-sections dans le menu de gauche détaillent chaque étape du pipeline :
+Pour plus de détails sur les différentes étapes, voici le menu de navigation (aussi présent dans la barre latérale gauche) pour cette section de collecte des données:
 
 - [Étape 1 — Extraction des embeddings](collecte/etape-1-embeddings.html)
 - [Étape 2 — Clustering par classe](collecte/etape-2-clustering.html)
@@ -47,11 +47,3 @@ Les sous-sections dans le menu de gauche détaillent chaque étape du pipeline :
 - [Résultats et avantages](collecte/resultats.html)
 
 ---
-<br><br><br>
-
-<div align="center">
-
-| ⬅ [Previous](index.md) | [⬆ Main page](index.md) | [Entrainement du modèle ➡](model_training.md) |
-|-------------------------------|---------------------|-------------------------|
-
-</div>

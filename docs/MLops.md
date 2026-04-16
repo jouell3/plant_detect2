@@ -2,16 +2,13 @@
 layout: default
 title: "Monitoring / MLOps"
 nav_order: 6
+has_children: true
+has_toc: false
 ---
 
 
 # Monitoring des modèles de classification de plantes durant l'entrainement et après la mise en production
 
-## Table des matières
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ### 🎯 *Objectif du module*
 
@@ -19,13 +16,3 @@ Pour cette parie crutial dans le cycle de vie d'un projet de data science, j'ai 
 
 
 ---
-<br><br><br>
-
-
-
-<div align="center">
-
-| ⬅ [Génération d'une interface utilisateur](frontend.md) | [⬆ Main page](index.md) | [END]()  |
-|-------------------------------|---------------------|-------------------------|
-
-</div>

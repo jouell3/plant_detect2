@@ -2,16 +2,13 @@
 layout: default
 title: "Déploiement"
 nav_order: 4
+has_children: true
+has_toc: false
 ---
 
 
 # Deploiement du modèle de classification de plantes
 
-## Table des matières
-{: .no_toc .text-delta }
-
-1. TOC
-{:toc}
 
 ### 🎯 *Objectif du module*
 
@@ -20,13 +17,3 @@ Afin de pouvoir utiliser le modèle de classification de plantes que j'ai entrai
 
 
 ---
-<br><br><br>
-
-
-
-<div align="center">
-
-| ⬅ [Entrainement du modèle](model_training.md) | [⬆ Main page](index.md) | [Génération d'une interface utilisateur ➡](frontend.md) |
-|-------------------------------|---------------------|-------------------------|
-
-</div>
