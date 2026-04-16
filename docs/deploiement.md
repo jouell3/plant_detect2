@@ -1,9 +1,17 @@
 ---
 layout: default
+title: "Déploiement"
+nav_order: 4
 ---
 
 
 # Deploiement du modèle de classification de plantes
+
+## Table des matières
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ### 🎯 *Objectif du module*
 

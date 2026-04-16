@@ -1,10 +1,18 @@
 ---
 layout: default
+title: "Entrainement du modèle"
+nav_order: 3
 ---
 
 
 
 # Entrainement du modèle de classification de plantes
+
+## Table des matières
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ### 🎯 *Objectif du module*
 

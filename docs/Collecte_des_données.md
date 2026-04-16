@@ -2,11 +2,16 @@
 layout: default
 title: "Collecte des données"
 nav_order: 2
-has_children: true
 ---
 
 
 # Première étape: Collecte de données
+
+## Table des matières
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 
 

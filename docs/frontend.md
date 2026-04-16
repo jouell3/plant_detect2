@@ -1,9 +1,17 @@
 ---
 layout: default
+title: "Interface utilisateur"
+nav_order: 5
 ---
 
 
 # Génération d'une interface utilisateur pour l'utilisation des modèles de classification de plantes
+
+## Table des matières
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 🎯 Objectif du module
 

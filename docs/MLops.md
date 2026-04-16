@@ -1,9 +1,17 @@
 ---
 layout: default
+title: "Monitoring / MLOps"
+nav_order: 6
 ---
 
 
 # Monitoring des modèles de classification de plantes durant l'entrainement et après la mise en production
+
+## Table des matières
+{: .no_toc .text-delta }
+
+1. TOC
+{:toc}
 
 ### 🎯 *Objectif du module*
 

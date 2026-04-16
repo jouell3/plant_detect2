@@ -1,5 +1,8 @@
-theme: "just-the-docs"
+remote_theme: just-the-docs/just-the-docs
 markdown: GFM
+
+plugins:
+  - jekyll-remote-theme
 
 # Optional but recommended
 just_the_docs:
