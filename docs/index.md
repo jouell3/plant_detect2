@@ -1,6 +1,9 @@
 ---
 layout: default
+title: "index"
+nav_order: 1
 ---
+
 
 
 # Détection automatique de plantes par computer vision
