@@ -1,5 +1,10 @@
 remote_theme: just-the-docs/just-the-docs
-markdown: GFM
+
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
+  syntax_highlighter: rouge
 
 plugins:
   - jekyll-remote-theme
