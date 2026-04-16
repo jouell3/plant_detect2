@@ -11,3 +11,12 @@ L'objectif de ce module est de déployer le modèle de classification de plantes
 
 
 ---
+
+<br><br><br>
+
+<div align="center">
+
+| ⬅ [Deploiement](deploiement.md) | [⬆ Main page](index.md) | [Monitoring des modèles ➡](MLops.md) |
+|-------------------------------|---------------------|-------------------------|
+
+</div>

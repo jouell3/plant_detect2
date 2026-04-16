@@ -33,7 +33,7 @@ Pour permttre le déployement de ce modèle et permettre à tous de l'utiliser, 
 
 <div align="center">
 
-| ⬅ [Previous] | [⬆ Main page](index.md) | [Dataset Collection ➡](dataset_collection.md) |
+| ⬅ [Previous] | [⬆ Main page](index.md) | [Collecte des données ➡](data_collection.md) |
 |-------------------------------|---------------------|-------------------------|
 
 </div>

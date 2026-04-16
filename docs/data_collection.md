@@ -86,7 +86,7 @@ Cela permet :
 
 <br>
 
-![PCA des embedings](/figures/PCA.png)
+![PCA des embedings](figures/PCA.png)
 
 #### Figure 1 : Visualisation des embeddings avec PCA, colorés par classe. On observe une bonne séparation entre les classes, avec quelques chevauchements.
 ---
@@ -141,7 +141,7 @@ Après avoir appliqué ce pipeline de filtrage automatique, et avoir combiné to
 
 Voici la distribution finale des classes dans le dataset après le filtrage automatique :
 
-![Distribution des classes dans le dataset final](/figures/distributions.png)
+![Distribution des classes dans le dataset final](figures/distributions.png)
 
 
 
@@ -150,7 +150,7 @@ Voici la distribution finale des classes dans le dataset après le filtrage auto
 
 <div align="center">
 
-| ⬅ [Previous] | [⬆ Main page](index.md) | [Dataset Collection ➡](dataset_collection.md) |
+| ⬅ [Previous](index.md) | [⬆ Main page](index.md) | [Entrainement du modèle ➡](model_training.md) |
 |-------------------------------|---------------------|-------------------------|
 
 </div>
