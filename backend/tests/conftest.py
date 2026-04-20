@@ -22,7 +22,22 @@ def mock_all_predictors(monkeypatch):
 
     monkeypatch.setattr(api_mod, "_load_all", lambda: None)
     monkeypatch.setattr(monitoring_mod, "monitor", MagicMock())
-    monkeypatch.setattr(api_mod, "metrics_store", MagicMock())
+
+    mock_store = MagicMock()
+    mock_store.snapshot.return_value = {
+        "kpis": {
+            "total_requests": 0,
+            "avg_latency_ms": 0.0,
+            "avg_confidence": 0.0,
+            "low_confidence_count": 0,
+            "uptime_seconds": 0,
+        },
+        "recent_requests": [],
+        "class_distribution": {},
+        "model_stats": {},
+    }
+    mock_store.all_predictions.return_value = []
+    monkeypatch.setattr(api_mod, "metrics_store", mock_store)
 
     fake_predictors = {}
     for key in ENABLED_KEYS:

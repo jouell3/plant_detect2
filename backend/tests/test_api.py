@@ -120,3 +120,21 @@ class TestExplore:
         entries = self._post(client).json()["predictions"][0]["top_k"]
         assert entries[0]["rank"] == 1
         assert entries[1]["rank"] == 2
+
+
+def test_get_metrics_returns_expected_shape(client):
+    resp = client.get("/metrics")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "kpis" in data
+    assert "recent_requests" in data
+    assert "class_distribution" in data
+    assert "model_stats" in data
+
+
+def test_get_metrics_predictions_returns_list(client):
+    resp = client.get("/metrics/predictions")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "predictions" in data
+    assert isinstance(data["predictions"], list)

@@ -115,11 +115,12 @@ async def predict(
                 "model": key,
                 "top3": [{"class": c, "confidence": conf} for c, conf in top3],
             })
-        metrics_store.record_request(
-            timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            predictions=collected,
-        )
     finally:
+        if collected:
+            metrics_store.record_request(
+                timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                predictions=collected,
+            )
         Path(tmp_path).unlink(missing_ok=True)
 
     return {"predictions": results}
@@ -153,15 +154,17 @@ async def predict_batch(
             per_model_latency[key] = latency_ms
             if preds:
                 monitor.log_prediction(key, preds[0][0], preds[0][1], latency_ms, "predict-batch")
-        for i in range(len(filenames)):
-            metrics_store.record_request(
-                timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                predictions={
-                    key: (per_model[key][i][0], per_model[key][i][1], per_model_latency[key])
-                    for key in keys
-                },
-            )
     finally:
+        if per_model:
+            n = min(len(per_model[key]) for key in per_model)
+            for i in range(n):
+                metrics_store.record_request(
+                    timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                    predictions={
+                        key: (per_model[key][i][0], per_model[key][i][1], per_model_latency[key])
+                        for key in per_model
+                    },
+                )
         for p in tmp_paths:
             Path(p).unlink(missing_ok=True)
 
@@ -214,11 +217,12 @@ async def explore(
                     for i, (c, conf) in enumerate(top3)
                 ],
             })
-        metrics_store.record_request(
-            timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            predictions=collected,
-        )
     finally:
+        if collected:
+            metrics_store.record_request(
+                timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                predictions=collected,
+            )
         Path(tmp_path).unlink(missing_ok=True)
 
     return {"filename": file.filename, "predictions": results}
