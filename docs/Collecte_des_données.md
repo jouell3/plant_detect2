@@ -31,11 +31,6 @@ Cette approche permet d’automatiser une partie du nettoyage du dataset **sans 
 
 <br>
 
-## Pipeline de filtrage automatique basé sur les embeddings d’images
-
-Étant données que ce nouveau dataset de fleurs et d'arbres fruitiers contient peu d'images de chaque classe, j'ai décidé d'utiliser une méthode de clustering basée sur les embeddings d'images pour faire du filtrage automatique d'autres images. L'idée était d'utiliser les informatins contenu dans ces images manuellement triées pour faire du filtrage automatique des nouvelles images collectées via l'API d’iNaturalist. L'idée ici n'était pas d'utiliser le modèle final comme filtre pour ne pas biaiser le modèle final mais plutôt de créer un système de filtrage indépendant aux classes originales. Pour ce faire, j'ai utilisé les embeddings d'images extraits d'un modèle pré-entraîné (EfficientNet-B3) pour faire du clustering KMeans par classe, et ensuite utiliser ces clusters pour définir des seuils de filtrage automatique des nouvelles images. J'ai aussi utilisé un classifieur XGBoost multi-classe sur les embeddings pour faire du pré-filtrage des nouvelles images avant de faire le filtrage basé sur les distances aux centroïdes des clusters. Même si j'ai utilisé un classifieur XGBoost, l'idée n'était pas d'utiliser ce classifieur comme filtre principal mais plutôt comme un outil de pré-filtrage pour éviter de faire le filtrage basé sur les distances aux centroïdes des clusters pour des images qui sont clairement hors distribution (ex : une image d'un chat au lieu d'une image d'une plante).
-
-<br>
 
 Pour plus de détails sur les différentes étapes, voici le menu de navigation (aussi présent dans la barre latérale gauche) pour cette section de collecte des données:
 
