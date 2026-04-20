@@ -1,6 +1,7 @@
 """
 All TimmPredictor instances replaced with stubs - no weights or GPU needed.
 Monitor singleton patched to a MagicMock so tests never hit wandb.
+MetricsStore singleton patched to a MagicMock so tests never accumulate state.
 """
 import io
 from unittest.mock import MagicMock
@@ -16,10 +17,12 @@ TOP1_STUB = ("Basilic", 0.90)
 def mock_all_predictors(monkeypatch):
     import app.api.main as api_mod
     from herbs_detection import monitoring as monitoring_mod
+
     from herbs_detection.model_registry import ENABLED_KEYS
 
     monkeypatch.setattr(api_mod, "_load_all", lambda: None)
     monkeypatch.setattr(monitoring_mod, "monitor", MagicMock())
+    monkeypatch.setattr(api_mod, "metrics_store", MagicMock())
 
     fake_predictors = {}
     for key in ENABLED_KEYS:

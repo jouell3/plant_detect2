@@ -18,6 +18,7 @@ warnings.filterwarnings("ignore", message="Could not initialize NNPACK")
 
 from herbs_detection.model_registry import MODEL_REGISTRY, REGISTRY_BY_KEY, ENABLED_KEYS
 from herbs_detection.monitoring import monitor
+from herbs_detection.metrics_store import metrics_store
 from herbs_detection.timm_predictor import TimmPredictor
 
 _predictors: dict[str, TimmPredictor] = {}
@@ -73,6 +74,18 @@ def list_models():
     ]
 
 
+@api.get("/metrics")
+def get_metrics():
+    """Live model health snapshot: KPIs, last 20 requests, class distribution, per-model stats."""
+    return metrics_store.snapshot()
+
+
+@api.get("/metrics/predictions")
+def get_all_predictions():
+    """Full prediction history as a flat list (for CSV export)."""
+    return {"predictions": metrics_store.all_predictions()}
+
+
 @api.post("/predict")
 async def predict(
     file: UploadFile = File(...),
@@ -89,6 +102,7 @@ async def predict(
         tmp.write(await file.read())
         tmp_path = tmp.name
 
+    collected: dict[str, tuple[str, float, float]] = {}
     results = []
     try:
         for key in keys:
@@ -96,10 +110,15 @@ async def predict(
             top3 = _predictors[key].predict_top3(tmp_path)[:top_k]
             latency_ms = (time.perf_counter() - t0) * 1000
             monitor.log_prediction(key, top3[0][0], top3[0][1], latency_ms, "predict")
+            collected[key] = (top3[0][0], top3[0][1], latency_ms)
             results.append({
                 "model": key,
                 "top3": [{"class": c, "confidence": conf} for c, conf in top3],
             })
+        metrics_store.record_request(
+            timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            predictions=collected,
+        )
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
@@ -123,15 +142,25 @@ async def predict_batch(
             tmp_paths.append(tmp.name)
             filenames.append(f.filename)
 
-    per_model = {}
+    per_model: dict[str, list] = {}
+    per_model_latency: dict[str, float] = {}
     try:
         for key in keys:
             t0 = time.perf_counter()
             preds = _predictors[key].predict_set(tmp_paths)
             latency_ms = (time.perf_counter() - t0) * 1000 / max(len(tmp_paths), 1)
             per_model[key] = preds
+            per_model_latency[key] = latency_ms
             if preds:
                 monitor.log_prediction(key, preds[0][0], preds[0][1], latency_ms, "predict-batch")
+        for i in range(len(filenames)):
+            metrics_store.record_request(
+                timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                predictions={
+                    key: (per_model[key][i][0], per_model[key][i][1], per_model_latency[key])
+                    for key in keys
+                },
+            )
     finally:
         for p in tmp_paths:
             Path(p).unlink(missing_ok=True)
@@ -169,6 +198,7 @@ async def explore(
         tmp.write(await file.read())
         tmp_path = tmp.name
 
+    collected: dict[str, tuple[str, float, float]] = {}
     results = []
     try:
         for key in keys:
@@ -176,6 +206,7 @@ async def explore(
             top3 = _predictors[key].predict_top3(tmp_path)[:top_k]
             latency_ms = (time.perf_counter() - t0) * 1000
             monitor.log_prediction(key, top3[0][0], top3[0][1], latency_ms, "explore")
+            collected[key] = (top3[0][0], top3[0][1], latency_ms)
             results.append({
                 "model": key,
                 "top_k": [
@@ -183,6 +214,10 @@ async def explore(
                     for i, (c, conf) in enumerate(top3)
                 ],
             })
+        metrics_store.record_request(
+            timestamp=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            predictions=collected,
+        )
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
