@@ -5,6 +5,7 @@ Mirrors the TTL-based pattern from the old gcs_cache.py.
 import os
 import shutil
 import tempfile
+import threading
 import time
 from pathlib import Path
 
@@ -13,6 +14,16 @@ from loguru import logger
 _CACHE_MAX_AGE = int(os.getenv("WANDB_CACHE_MAX_AGE_SECONDS", str(3 * 3600)))
 _WANDB_PROJECT = os.getenv("WANDB_PROJECT", "certification")
 _WANDB_ENTITY  = os.getenv("WANDB_ENTITY", "")
+
+_artifact_locks: dict[str, threading.Lock] = {}
+_artifact_locks_lock = threading.Lock()
+
+
+def _get_artifact_lock(name: str) -> threading.Lock:
+    with _artifact_locks_lock:
+        if name not in _artifact_locks:
+            _artifact_locks[name] = threading.Lock()
+        return _artifact_locks[name]
 
 
 def is_cache_valid(local_dir: Path, filenames: list[str],
@@ -66,48 +77,60 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None,
         monitor.log_artifact_download(artifact_name, 0.0, cache_hit=True)
         return local_dir
 
-    logger.info("Downloading wandb artifact: {} (type={})", artifact_name, artifact_type)
-    _t0 = time.time()
-    try:
-        import wandb
-        entity_prefix = f"{_WANDB_ENTITY}/" if _WANDB_ENTITY else ""
-        ref = f"{entity_prefix}{_WANDB_PROJECT}/{artifact_name}:latest"
-        api = wandb.Api()
-        artifact = api.artifact(ref, type=artifact_type)
-
-        # Download to temp dir first to prevent cache poisoning if download fails
-        tmp_dir = cache_root / f"{safe_name}.tmp"
-        shutil.rmtree(tmp_dir, ignore_errors=True)
-        tmp_dir.mkdir(parents=True, exist_ok=True)
-        artifact.download(root=str(tmp_dir))
-
-        # Atomically replace the destination directory
-        if local_dir.exists():
-            shutil.rmtree(local_dir)
-        tmp_dir.rename(local_dir)
-
-        logger.info("Downloaded to {}.", local_dir)
-    except Exception as exc:
-        logger.warning("wandb download failed ({}). Trying local fallback.", exc)
+    with _get_artifact_lock(safe_name):
+        # Re-check cache under lock — another thread may have downloaded while we waited
         if artifact_type == "model":
-            fallback = Path.cwd() / f"{artifact_name}.pth"
-            if fallback.exists():
-                local_dir.mkdir(parents=True, exist_ok=True)
-                shutil.copy2(fallback, local_dir / fallback.name)
-                logger.info("Using local fallback: {}.", fallback)
+            cached_files = list(local_dir.glob("*.pth")) if local_dir.exists() else []
+        else:
+            cached_files = [p for p in local_dir.iterdir() if p.is_file()] if local_dir.exists() else []
+
+        if cached_files and is_cache_valid(local_dir, [cached_files[0].name]):
+            from .monitoring import monitor
+            monitor.log_artifact_download(artifact_name, 0.0, cache_hit=True)
+            return local_dir
+
+        logger.info("Downloading wandb artifact: {} (type={})", artifact_name, artifact_type)
+        _t0 = time.time()
+        try:
+            import wandb
+            entity_prefix = f"{_WANDB_ENTITY}/" if _WANDB_ENTITY else ""
+            ref = f"{entity_prefix}{_WANDB_PROJECT}/{artifact_name}:latest"
+            api = wandb.Api()
+            artifact = api.artifact(ref, type=artifact_type)
+
+            # Download to temp dir first to prevent cache poisoning if download fails
+            tmp_dir = cache_root / f"{safe_name}.tmp"
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+            tmp_dir.mkdir(parents=True, exist_ok=True)
+            artifact.download(root=str(tmp_dir))
+
+            # Atomically replace the destination directory
+            if local_dir.exists():
+                shutil.rmtree(local_dir)
+            tmp_dir.rename(local_dir)
+
+            logger.info("Downloaded to {}.", local_dir)
+        except Exception as exc:
+            logger.warning("wandb download failed ({}). Trying local fallback.", exc)
+            if artifact_type == "model":
+                fallback = Path.cwd() / f"{artifact_name}.pth"
+                if fallback.exists():
+                    local_dir.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(fallback, local_dir / fallback.name)
+                    logger.info("Using local fallback: {}.", fallback)
+                else:
+                    raise FileNotFoundError(
+                        f"wandb download failed and no local fallback found for {artifact_name}. "
+                        f"Place {artifact_name}.pth in the working directory or set WANDB_API_KEY."
+                    ) from exc
             else:
                 raise FileNotFoundError(
-                    f"wandb download failed and no local fallback found for {artifact_name}. "
-                    f"Place {artifact_name}.pth in the working directory or set WANDB_API_KEY."
+                    f"wandb download failed for {artifact_type} artifact '{artifact_name}'. "
+                    "Set WANDB_API_KEY or place the file manually."
                 ) from exc
-        else:
-            raise FileNotFoundError(
-                f"wandb download failed for {artifact_type} artifact '{artifact_name}'. "
-                "Set WANDB_API_KEY or place the file manually."
-            ) from exc
 
-    from .monitoring import monitor
-    monitor.log_artifact_download(artifact_name, time.time() - _t0, cache_hit=False)
+        from .monitoring import monitor
+        monitor.log_artifact_download(artifact_name, time.time() - _t0, cache_hit=False)
     return local_dir
 
 
