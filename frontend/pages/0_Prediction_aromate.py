@@ -15,8 +15,8 @@ from styles import COLORS, confidence_color, confidence_badge, styled_info_card,
 from utils import post_with_retries, validate_image_file
 
 #API_URL = os.environ.get("API_URL", "https://plant-detect-backend-649164185154.europe-west1.run.app")
-API_URL = "http://localhost:8080"
-#API_URL = "https://herb-predictor-966041648100.europe-west1.run.app"
+#API_URL = "http://localhost:8080"
+API_URL = "https://plant-predictor-966041648100.europe-west1.run.app"
 #API_URL = "http://127.0.0.1:8000/"
 MAX_HISTORY_ITEMS = 20
 RETRY_DELAYS_SECONDS = (0.8, 1.6)

@@ -16,7 +16,7 @@ test:
 	  -F "file=@data/raw/all_images/dill_0.jpg"
 
 build: ## Build Docker image locally
-	docker build -f docker/backend.Dockerfile -t plant-detect-backend .
+	docker build -f docker/backend.Dockerfile -t plant-detect2-backend .
 
 run: build ## Build and run container locally (mounts GCP ADC credentials)
 	docker run --rm -p 8080:8080 \
@@ -24,7 +24,11 @@ run: build ## Build and run container locally (mounts GCP ADC credentials)
 	  -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json \
 	  -e GCS_BUCKET_NAME=plant-detect-models \
 	  -e GCS_PROJECT=bootcamparomatic \
-	  plant-detect-backend
+	  plant-detect2-backend
+
+build_local: ## Build image locally (Linux/amd64 platform)
+	@echo "Building the image locally..."
+	docker buildx build --platform linux/amd64 -f docker/backend.Dockerfile -t ${LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GCP_REPOSITORY}/${IMAGE} . --load
 
 build_gcp: ## Build image for GCP (Linux/amd64 platform)
 	@echo "Building the image for GCP..."
@@ -34,7 +38,7 @@ push_gcp: build_gcp ## Build and push image to Artifact Registry
 	docker push ${LOCATION}-docker.pkg.dev/${GCP_PROJECT}/${GCP_REPOSITORY}/${IMAGE}
 
 get_log_gcp: 
-	gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=plant-detect-backend" \
+	gcloud logging read "resource.type=cloud_run_revision AND resource.labels.service_name=plant-detect2-backend" \
   		--project=bootcamparomatic \
   		--limit=50 \
   		--format="table(timestamp, severity, textPayload)"

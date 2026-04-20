@@ -13,7 +13,7 @@ from PIL import Image
 from torchvision import transforms
 
 from .model_registry import ModelConfig
-from .wandb_loader import artifact_local_path
+from .wandb_loader import artifact_local_path, label_encoder_local_path
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -41,11 +41,15 @@ class TimmPredictor:
         try:
             local_dir = artifact_local_path(self._cfg.wandb_artifact, self._cache_root)
 
-            # Load class names from label encoder or classes.txt
+            # Check model artifact dir first, then fall back to shared preprocessor artifact
             encoder_files = list(local_dir.glob("*.pkl"))
+            if not encoder_files:
+                shared_dir = label_encoder_local_path(self._cache_root)
+                encoder_files = list(shared_dir.glob("*.pkl"))
             if encoder_files:
+                # sklearn LabelEncoder requires pickle — source is our own wandb registry
                 with open(encoder_files[0], "rb") as f:
-                    le = pickle.load(f)
+                    le = pickle.load(f)  # noqa: S301
                 self._classes = list(le.classes_)
             else:
                 classes_file = local_dir / "classes.txt"
@@ -53,8 +57,8 @@ class TimmPredictor:
                     self._classes = classes_file.read_text().splitlines()
                 else:
                     raise FileNotFoundError(
-                        f"No label encoder (*.pkl) or classes.txt in {local_dir}. "
-                        "Save one alongside the .pth file in the wandb artifact."
+                        f"No label encoder (*.pkl) in {local_dir} or the shared "
+                        "'label_encoder' preprocessor artifact, and no classes.txt found."
                     )
 
             num_classes = len(self._classes)
