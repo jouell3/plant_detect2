@@ -1,6 +1,9 @@
 # backend/app/api/main.py
 import os
 import tempfile
+
+from dotenv import load_dotenv
+load_dotenv()
 import threading
 import time
 from contextlib import asynccontextmanager

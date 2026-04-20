@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 
@@ -15,6 +16,9 @@ class WandbMonitor:
     def start(self, project: str, entity: str = "") -> None:
         try:
             import wandb
+            api_key = os.getenv("WANDB_API_KEY")
+            if api_key:
+                wandb.login(key=api_key, relogin=True)
             kwargs = {"project": project, "job_type": "serving"}
             if entity:
                 kwargs["entity"] = entity
