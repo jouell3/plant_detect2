@@ -1,6 +1,7 @@
 import csv
 import io
 import time
+from collections import Counter
 
 import pandas as pd
 import requests
@@ -41,8 +42,11 @@ def _build_table_html(rows: list[dict], model_keys: list[str]) -> str:
     body_rows = []
     for row in rows:
         classes = [row[k]["class"] for k in model_keys if k in row]
-        majority = max(set(classes), key=classes.count) if classes else ""
-        cells = [f'<td style="padding:5px 10px">{row["timestamp"]}</td>']
+        counts = Counter(classes)
+        top_count = counts.most_common(1)[0][1] if counts else 0
+        winners = [cls for cls, cnt in counts.items() if cnt == top_count]
+        majority = winners[0] if len(winners) == 1 else ""
+        cells = [f'<td style="padding:5px 10px">{row.get("timestamp", "—")}</td>']
         for k in model_keys:
             if k not in row:
                 cells.append('<td style="padding:5px 10px">—</td>')
@@ -70,12 +74,20 @@ def _build_table_html(rows: list[dict], model_keys: list[str]) -> str:
     )
 
 
+@st.cache_data(ttl=30)
+def _fetch_csv_cached() -> str:
+    preds = _fetch_all_predictions()
+    return _build_csv(preds)
+
+
 def _build_csv(predictions: list[dict]) -> str:
     if not predictions:
         return ""
     buf = io.StringIO()
     writer = csv.DictWriter(
-        buf, fieldnames=["timestamp", "model", "class", "confidence", "latency_ms"]
+        buf,
+        fieldnames=["timestamp", "model", "class", "confidence", "latency_ms"],
+        extrasaction="ignore",
     )
     writer.writeheader()
     writer.writerows(predictions)
@@ -91,7 +103,12 @@ def _agreement_rate(rows: list[dict], model_keys: list[str]) -> dict[str, float]
         if len(present) < 2:
             continue
         classes = [row[k]["class"] for k in present]
-        majority = max(set(classes), key=classes.count)
+        counts = Counter(classes)
+        top_count = counts.most_common(1)[0][1]
+        winners = [cls for cls, cnt in counts.items() if cnt == top_count]
+        if len(winners) > 1:
+            continue  # genuine tie — skip this row
+        majority = winners[0]
         for k in present:
             total[k] += 1
             if row[k]["class"] == majority:
@@ -106,6 +123,7 @@ def _agreement_rate(rows: list[dict], model_keys: list[str]) -> dict[str, float]
 # Fetch data
 # ---------------------------------------------------------------------------
 data = _fetch_metrics()
+auto_refresh = st.sidebar.toggle("Auto-refresh (10s)", value=True, key="auto_refresh")
 
 # ---------------------------------------------------------------------------
 # Header + status badge
@@ -121,7 +139,7 @@ with col_badge:
 
 if data is None:
     st.warning("API unreachable — retrying in 10s")
-    if st.sidebar.toggle("Auto-refresh (10s)", value=True):
+    if auto_refresh:
         time.sleep(10)
         st.rerun()
     st.stop()
@@ -153,9 +171,8 @@ if recent and model_keys:
 else:
     st.info("No predictions recorded yet.")
 
-# CSV download (fetches full history)
-all_preds = _fetch_all_predictions()
-csv_data = _build_csv(all_preds)
+# CSV download (fetches full history, cached for 30s to avoid re-fetch on every auto-refresh)
+csv_data = _fetch_csv_cached()
 st.download_button(
     label="Download all predictions (CSV)",
     data=csv_data,
@@ -205,6 +222,6 @@ else:
 # ---------------------------------------------------------------------------
 # Auto-refresh
 # ---------------------------------------------------------------------------
-if st.sidebar.toggle("Auto-refresh (10s)", value=True):
+if auto_refresh:
     time.sleep(10)
     st.rerun()
