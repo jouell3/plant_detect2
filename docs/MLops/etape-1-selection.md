@@ -36,10 +36,3 @@ Pour rappel, la **précision** est la proportion d'images correctement classées
 ![Précision des différents modèles sur toutes les classes ](../figures/precision_heatmap_allmodels.png)
 
 #### Figure 2 : F1-score et présisions des différents modèles sur toutes les classes. On observe que le modèle ConvNeXt-Tiny a des performances globalement élevées, avec quelques variations entre les classes et catégories. Les autres modèles ont des performances plus variables, avec des points faibles sur certaines classes.
-
-
-
-
-
-![precision](../figures/precision_bycategory.png)
-#### Figure 2 : Precision des modèles par classe et parcatégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. ConvNe
