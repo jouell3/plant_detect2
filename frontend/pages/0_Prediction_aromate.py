@@ -11,7 +11,7 @@ from loguru import logger
 from PIL import Image
 
 from i18n import get_language, render_language_selector
-from styles import COLORS, confidence_color, confidence_badge, styled_info_card, page_header
+from styles import COLORS, confidence_color, confidence_badge, styled_info_card, page_header, inject_global_css
 from utils import post_with_retries, validate_image_file
 
 # Local API URL - change to your deployed API endpoint if needed
@@ -30,6 +30,7 @@ _SUGGESTIONS_PATH = Path(__file__).parent.parent / "suggestions.json"
 SUGGESTIONS: dict = json.loads(_SUGGESTIONS_PATH.read_text(encoding="utf-8")) if _SUGGESTIONS_PATH.exists() else {}
 
 st.set_page_config(page_title="Plant Predictor", layout="wide")
+inject_global_css()
 
 # ---------------------------------------------------------------------------
 # Session state — prediction history
@@ -104,7 +105,7 @@ with st.sidebar:
         st.caption("No predictions yet." if lang == "en" else "Aucune prediction pour le moment.")
     else:
         show_history = st.checkbox("Show history" if lang == "en" else "Afficher l'historique", value=True)
-        if st.button("Clear" if lang == "en" else "Effacer", use_container_width=True):
+        if st.button("Clear" if lang == "en" else "Effacer", width='stretch'):
             st.session_state.prediction_history = []
             st.rerun()
         if show_history:
@@ -197,7 +198,7 @@ st.markdown(
 )
 
 
-if st.button("🔍 Identify", type="primary", use_container_width=False):
+if st.button("🔍 Identify", type="primary", width='content'):
     with st.spinner("Analyzing (~30-60s)..." if lang == "en" else "Analyse en cours (~30-60s)..."):
         try:
             logger.info("predict_herb | file={}", uploaded_file.name)
@@ -273,135 +274,178 @@ if prediction:
     top_species = prediction["top_species"]
     mean_confidence = prediction["mean_confidence"]
     good_models = prediction["good_models"]
-    top_species_fr = FICHES.get(_normalize_species_key(top_species), {}).get("nom_fr", top_species)
-
-    # ── Display ───────────────────────────────────────────────────────────
-    st.subheader("Results" if lang == "en" else "Resultats")
     herb_found = [data["predictions"][i]["top3"][0]["class"] for i in range(len(models_used))]
-    
-    if len(set(herb_found)) == 2:
+    unique_preds = len(set(herb_found))
+    fiche = FICHES.get(_normalize_species_key(top_species))
+
+    # ── Hero result card ──────────────────────────────────────────────────
+    color = confidence_color(mean_confidence)
+    if unique_preds == 1:
+        agreement_badge = f"<span style='background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>✅ {'All models agree' if lang == 'en' else 'Tous les modèles concordent'}</span>"
+    elif unique_preds == 2:
+        agreement_badge = f"<span style='background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>⚠️ {'Most models agree' if lang == 'en' else 'La majorité concorde'}</span>"
+    else:
+        agreement_badge = f"<span style='background:#fce4ec;color:#c62828;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>❌ {'Models disagree' if lang == 'en' else 'Les modèles divergent'}</span>"
+
+    display_name = _display_species_name(top_species)
+    hero_html = f"""
+    <div style='background:white;border:1px solid #dde5dd;border-radius:16px;padding:1.4rem 1.8rem;
+                margin:1rem 0 1.5rem;box-shadow:0 2px 12px rgba(26,46,35,0.08);
+                display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap'>
+        <div style='flex:1;min-width:200px'>
+            <div style='font-size:0.68rem;text-transform:uppercase;letter-spacing:1.4px;
+                        color:#7a9e87;font-weight:600;margin-bottom:6px'>
+                {"Espèce identifiée" if lang == "fr" else "Identified species"}
+            </div>
+            <div style='font-size:2rem;font-weight:700;color:#1a2e23;
+                        font-family:Playfair Display,Georgia,serif;line-height:1.2;margin-bottom:8px'>
+                {display_name}
+            </div>
+            {agreement_badge}
+        </div>
+        <div style='text-align:center;padding:0.8rem 1.4rem;background:#f8f6f1;
+                    border-radius:12px;border:1px solid #dde5dd'>
+            <div style='font-size:2.4rem;font-weight:700;color:{color};line-height:1'>{mean_confidence:.0%}</div>
+            <div style='font-size:0.68rem;text-transform:uppercase;letter-spacing:0.8px;
+                        color:#7a9e87;margin-top:4px'>{"confiance" if lang == "fr" else "confidence"}</div>
+        </div>
+    </div>
+    """
+    st.markdown(hero_html, unsafe_allow_html=True)
+
+    if unique_preds > 2:
         st.warning(
-            "At least one model disagrees with the prediction, but here is the result supported by the other models. "
-            "You can review each model's details below. Try another image or improve lighting and angle."
+            f"The {len(models_used)} models disagree on the prediction. Try another image or improve lighting and angle."
             if lang == "en"
-            else "Au moins un des modeles n'est pas d'accord sur la prediction mais voici quand meme la prediction obtenue pour les autres modeles. "
-            "Vous pouvez voir les details de chaque prediction en bas de page. Essayez avec une autre image ou prenez la photo dans de meilleures conditions d'eclairage ou d'angle."
+            else f"Les {len(models_used)} modèles ne concordent pas. Essayez avec une autre image ou de meilleures conditions d'éclairage."
         )
-    if len(set(herb_found)) <= 2:
-        st.success(
-            f"The model predicted **{_display_species_name(top_species).lower()}** with an average confidence of {mean_confidence:.0%} across {len(good_models)} models: {', '.join(good_models)}."
+    elif mean_confidence < 0.50:
+        st.info(
+            "Low confidence — try a sharper photo with better lighting and a tighter crop on the plant."
             if lang == "en"
-            else f"Le modele a predit **{top_species_fr.lower()}** avec une confiance moyenne de {mean_confidence:.0%} sur les {len(good_models)} modeles suivants: {', '.join(good_models)}."
+            else "Confiance faible — essayez une photo plus nette avec une meilleure lumière et un cadrage serré sur la plante."
         )
-    
-    col_img, col_fiche= st.columns([ 1, 3], vertical_alignment="bottom", gap="large")
+
+    # ── Image + botanical info ─────────────────────────────────────────────
+    col_img, col_info = st.columns([1, 3], gap="large")
 
     with col_img:
         img = Image.open(io.BytesIO(prediction["uploaded_bytes"]))
-        st.image(img, width="stretch", caption=prediction["uploaded_name"])
+        st.image(img, width='stretch', caption=prediction["uploaded_name"])
 
-    with col_fiche:
-    # ── Herb info card ─────────────────────────────────────────────────────
-        #herb_found = [data[key][0]["species"] for key in models_used]
-        
-        if len(set(herb_found)) <= 2:  # If at least 3 models out of the 4 agree on the same herb, show the info card
-            fiche = FICHES.get(_normalize_species_key(top_species))
-            st.divider()
-            if fiche:
-                nom_fr_md = f"[{fiche['nom_fr']}]({fiche['wikipedia_fr']})" if fiche.get("wikipedia_fr") else fiche['nom_fr']
-                nom_en_md = f"[{fiche['nom_en']}]({fiche['wikipedia_en']})" if fiche.get("wikipedia_en") else fiche['nom_en']
-                st.markdown(f"### About — {nom_en_md} (*{nom_fr_md}*)" if lang == "en" else f"### A propos - {nom_fr_md} (*{nom_en_md}*)")
+    with col_info:
+        if unique_preds <= 2 and fiche:
+            nom_fr_md = f"[{fiche['nom_fr']}]({fiche['wikipedia_fr']})" if fiche.get("wikipedia_fr") else fiche["nom_fr"]
+            nom_en_md = f"[{fiche['nom_en']}]({fiche['wikipedia_en']})" if fiche.get("wikipedia_en") else fiche["nom_en"]
+            herb_display_name = fiche["nom_en"] if lang == "en" else fiche["nom_fr"]
+
+            tab_about, tab_recipes = st.tabs([
+                "🌿 About" if lang == "en" else "🌿 À propos",
+                "🍽️ Recipes & Dishes" if lang == "en" else "🍽️ Recettes & Plats",
+            ])
+
+            with tab_about:
+                st.markdown(
+                    f"#### {nom_en_md} (*{nom_fr_md}*)" if lang == "en"
+                    else f"#### {nom_fr_md} (*{nom_en_md}*)"
+                )
                 st.markdown(_fiche_value(fiche, "description", lang))
-
                 info_dict = {
-                    ("🌸 Aroma" if lang == "en" else "🌸 Arome"): _fiche_value(fiche, "arome", lang),
+                    ("🌸 Aroma" if lang == "en" else "🌸 Arôme"): _fiche_value(fiche, "arome", lang),
                     ("🌱 Cultivation" if lang == "en" else "🌱 Culture"): _fiche_value(fiche, "culture", lang),
-                    ("⚠️ Toxicity" if lang == "en" else "⚠️ Toxicite"): _fiche_value(fiche, "toxicite", lang),
-                    ("🍽️ Uses" if lang == "en" else "🍽️ Usages"): ', '.join(_fiche_value(fiche, "usages", lang)),
-                    ("🤝 Pairings" if lang == "en" else "🤝 Compatible"): ', '.join(_fiche_value(fiche, "compatibilites", lang)),
+                    ("⚠️ Toxicity" if lang == "en" else "⚠️ Toxicité"): _fiche_value(fiche, "toxicite", lang),
+                    ("🍽️ Uses" if lang == "en" else "🍽️ Usages"): ", ".join(_fiche_value(fiche, "usages", lang) or []),
+                    ("🤝 Pairings" if lang == "en" else "🤝 Compatible"): ", ".join(_fiche_value(fiche, "compatibilites", lang) or []),
                 }
-                styled_info_card("Properties" if lang == "en" else "Proprietes", info_dict)
-            else:
-                st.markdown(f"### {top_species}")
-                st.markdown("No profile is available for this plant." if lang == "en" else "Aucune fiche disponible pour cette plante.")
-                wiki_search = f"https://fr.wikipedia.org/wiki/Special:Search?search={top_species.replace(' ', '+')}"
-                st.markdown(f"[Search on Wikipedia]({wiki_search})" if lang == "en" else f"[Rechercher sur Wikipedia]({wiki_search})")
+                styled_info_card("Properties" if lang == "en" else "Propriétés", info_dict)
 
-        if len(set(herb_found)) > 2:
-            st.warning(
-                f"The {len(list(models_used))} models disagree on the prediction. Please try another image or improve lighting and angle."
-                if lang == "en"
-                else f"Les {len(list(models_used))} modeles ne sont pas d'accord sur la prediction. Veuillez essayer avec une autre image ou prendre la photo dans de meilleures conditions d'eclairage ou d'angle."
-            )
-        elif mean_confidence < 0.50:
-            st.info("Low confidence: try a sharper photo, better lighting, and a closer crop on the plant." if lang == "en" else "Confiance faible: essayez une photo plus nette, une meilleure lumiere et un cadrage plus serre sur la plante.")
-    
-    # ── Suggestions grid section ──────────────────────────────────────────────
-    if len(set(herb_found)) <= 2:
-        species_key = _normalize_species_key(top_species)
-        if st.session_state.suggestions_species_key == species_key and st.session_state.suggestions_pool:
-            max_display = min(12, len(st.session_state.suggestions_pool))
-            visible_count = min(st.session_state.suggestions_visible_count, max_display)
-            suggestions = st.session_state.suggestions_pool[:visible_count]
-            st.divider()
-            st.markdown("### 💡 Usage Suggestions" if lang == "en" else "### 💡 Suggestions d'utilisation")
-            herb_display_name = fiche['nom_en'] if lang == "en" else fiche['nom_fr']
-            st.markdown(
-                f"Here are dish ideas to prepare with fresh **{herb_display_name}**. Click the sections below to generate detailed recipe prompts for your preferred AI chat (ChatGPT, Claude, etc.)."
-                if lang == "en"
-                else f"Voici des idees de plats a preparer avec du **{herb_display_name}** frais. Cliquez sur les boutons pour generer des prompts de recettes detaillees a utiliser avec votre chat IA prefere (ChatGPT, Claude, etc.)."
-            )
-            # Create 3-column grid layout
-            for idx in range(0, len(suggestions), 3):
-                cols = st.columns(3)
-                for col_idx, suggestion in enumerate(suggestions[idx:idx+3]):
-                    with cols[col_idx]:
-                        dish_name = _suggestion_value(suggestion, "plat", lang)
-                        dish_description = _suggestion_value(suggestion, "description", lang)
-                        suggestion_html = f"<div style='background: #f9f9f9; border-left: 4px solid {COLORS['success']}; padding: 16px; margin: 0; border-radius: 4px;'><div style='font-size: 1.1rem; font-weight: 700; color: {COLORS['text_primary']}; margin-bottom: 8px;'>{dish_name}</div><div style='font-size: 0.9rem; color: {COLORS['text_muted']}; line-height: 1.6;'>{dish_description}</div></div>"
-                        st.markdown(suggestion_html, unsafe_allow_html=True)
-                        
-                        # Generate recipe prompt in expandable section
-                        prompt = _generate_recipe_prompt(dish_name, herb_display_name)
-                        with st.expander(
-                            f"📋 Click to generate the recipe for {dish_name}" if lang == "en" else f"📋 Pour generer la recette de {dish_name}, cliquez ici",
-                            expanded=False,
-                        ):
-                            st.code(prompt, language="text")
-                            st.caption("Copy this text and paste it into your preferred AI chat (ChatGPT, Claude, etc.)" if lang == "en" else "Copiez ce texte et collez-le dans votre chat IA prefere (ChatGPT, Claude, etc.)")
-
-            if st.button("Suggest 3 more" if lang == "en" else "Suggere 3 de plus", disabled=visible_count >= max_display):
-                st.session_state.suggestions_visible_count = min(visible_count + 3, max_display)
-                st.rerun()
-        
-    # ── more information on the predictions ─────────────────────────────────────────────────────
-    st.text(" ")  # Spacer
-    st.divider()
-    st.markdown("### Prediction Details" if lang == "en" else "### Details des predictions")
-    
-    with st.expander("View prediction details" if lang == "en" else "Voir les details des predictions"):
-        models_list = list(models_used)
-        for i in range(0, len(models_list), 2):
-            
-            grid_cols = st.columns(2)
-            for j, key in enumerate(models_list[i:i+2]):
-                with grid_cols[j]:
-                    st.markdown(f"#### **Model: {key.upper()}**" if lang == "en" else f"#### **Modele: {key.upper()}**")
-                    species    = data["predictions"][i]["top3"][0]["class"]
-                    confidence = data["predictions"][i]["top3"][0]["confidence"]
-
-                    color = confidence_color(confidence)
-
+            with tab_recipes:
+                species_key = _normalize_species_key(top_species)
+                if st.session_state.suggestions_species_key == species_key and st.session_state.suggestions_pool:
+                    max_display = min(12, len(st.session_state.suggestions_pool))
+                    visible_count = min(st.session_state.suggestions_visible_count, max_display)
+                    suggestions = st.session_state.suggestions_pool[:visible_count]
                     st.markdown(
-                        f"<p style='font-size:1.4rem; font-weight:700; margin:0'>{_display_species_name(species)}</p>"
-                        f"<p style='color:{color}; font-size:1.1rem; margin:4px 0 16px'>"
-                        f"{confidence:.0%} confidence</p>",
-                        unsafe_allow_html=True,
+                        f"Dish ideas with fresh **{herb_display_name}**. Click an entry for an AI recipe prompt."
+                        if lang == "en"
+                        else f"Idées de plats avec du **{herb_display_name}** frais. Cliquez pour obtenir un prompt de recette IA."
+                    )
+                    for idx in range(0, len(suggestions), 3):
+                        recipe_cols = st.columns(3)
+                        for col_idx, suggestion in enumerate(suggestions[idx:idx + 3]):
+                            with recipe_cols[col_idx]:
+                                dish_name = _suggestion_value(suggestion, "plat", lang)
+                                dish_desc = _suggestion_value(suggestion, "description", lang)
+                                st.markdown(
+                                    f"<div style='background:#f8f6f1;border-left:3px solid #2e7d32;"
+                                    f"padding:12px 14px;border-radius:6px;margin-bottom:4px'>"
+                                    f"<div style='font-weight:700;color:#1a2e23;font-size:0.9rem;"
+                                    f"margin-bottom:4px'>{dish_name}</div>"
+                                    f"<div style='font-size:0.78rem;color:#5a7a62;line-height:1.5'>{dish_desc}</div>"
+                                    f"</div>",
+                                    unsafe_allow_html=True,
+                                )
+                                prompt = _generate_recipe_prompt(dish_name, herb_display_name)
+                                with st.expander(
+                                    f"📋 Recipe prompt" if lang == "en" else "📋 Prompt recette",
+                                    expanded=False,
+                                ):
+                                    st.code(prompt, language="text")
+                                    st.caption(
+                                        "Paste into ChatGPT, Claude, etc." if lang == "en"
+                                        else "Collez dans ChatGPT, Claude, etc."
+                                    )
+                    if st.button(
+                        "Show 3 more" if lang == "en" else "3 de plus",
+                        disabled=visible_count >= max_display,
+                    ):
+                        st.session_state.suggestions_visible_count = min(visible_count + 3, max_display)
+                        st.rerun()
+                else:
+                    st.info(
+                        "No recipe suggestions available for this species."
+                        if lang == "en"
+                        else "Aucune suggestion de recette disponible pour cette espèce."
                     )
 
-                    st.markdown("**Top 3**")
-                    for rank, pred in enumerate(data["predictions"][i]["top3"], 1):
+        elif unique_preds <= 2:
+            st.markdown(f"### {top_species}")
+            st.info(
+                "No botanical profile available for this species."
+                if lang == "en"
+                else "Aucune fiche botanique disponible pour cette espèce."
+            )
+            wiki = f"https://fr.wikipedia.org/wiki/Special:Search?search={top_species.replace(' ', '+')}"
+            st.markdown(f"[Search Wikipedia]({wiki})" if lang == "en" else f"[Chercher sur Wikipédia]({wiki})")
+
+    # ── Per-model details ─────────────────────────────────────────────────
+    st.divider()
+    with st.expander(
+        "🔬 Prediction details (all models)" if lang == "en" else "🔬 Détails par modèle",
+        expanded=False,
+    ):
+        models_list = list(models_used)
+        for row_start in range(0, len(models_list), 2):
+            grid_cols = st.columns(2)
+            for j, key in enumerate(models_list[row_start:row_start + 2]):
+                idx = row_start + j
+                with grid_cols[j]:
+                    pred_item = data["predictions"][idx]
+                    species = pred_item["top3"][0]["class"]
+                    confidence = pred_item["top3"][0]["confidence"]
+                    color = confidence_color(confidence)
+                    st.markdown(
+                        f"<div style='background:white;border:1px solid #dde5dd;border-radius:10px;"
+                        f"padding:14px 16px;margin-bottom:8px'>"
+                        f"<div style='font-size:0.68rem;text-transform:uppercase;letter-spacing:1px;"
+                        f"color:#7a9e87;font-weight:600;margin-bottom:4px'>{key.upper()}</div>"
+                        f"<div style='font-size:1.25rem;font-weight:700;color:#1a2e23;margin-bottom:2px'>"
+                        f"{_display_species_name(species)}</div>"
+                        f"<div style='color:{color};font-size:1rem;font-weight:600'>{confidence:.0%}</div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                    for rank, pred in enumerate(pred_item["top3"], 1):
                         bar_pct = int(pred["confidence"] * 100)
-                        st.markdown(f"**{rank}. {_display_species_name(pred['class'])}** — {pred['confidence']:.0%}")
+                        st.markdown(f"**{rank}.** {_display_species_name(pred['class'])} — {pred['confidence']:.0%}")
                         st.progress(bar_pct)
-                    i += 1

@@ -12,12 +12,14 @@ nav_order: 1
 
 ### Context du projet
 
-Pour cette certification, j’ai choisi de construire un classifieur d’images de plantes, avec un focus particulier sur les **fleurs, les aromates et les arbres fruitiers**. Ce travail a été démarré lors du projet final de la formation Data Science et AI donné par Artiefact School of data. Avec 3 autres de mes compagnons de promotion, nous avons collecté un dataset de plus de 20 000 images réparties sur 23 classes différentes d'aromate. 
+Pour cette certification, j’ai choisi de construire un classifieur d’images de plantes, avec un focus particulier sur les **fleurs, les aromates et les arbres fruitiers**. Ce travail a été initié lors du projet final de la formation Data Science et AI donné par Artiefact School of data. Avec 3 autres de mes colègues de promotion, nous avons collecté un dataset de plus de 27 000 images réparties sur 23 classes différentes d'aromate que nous avions utilisées poru entrainer 4 modèles différents. 
 
 
 ### Expression du besoin
 
-Bien que cette première application fonctionnait plutôt bien, elle était plutôt limitée : seulement 23 espères de plantes étaient reconnues pour ce premier modèles et la plupart des herbes aromatiques bien connues des gens. J’ai donc voulu aller plus loin pour la certification en enrichissant ce dataset avec des classes de fleurs et d'arbres fruitiers, afin de permetttre au modèle de déterminer l'espère de plus de plantes. Également, lors de la collecte des images pour ce projet de groupe, j'ai utilisé uen approche qui est un peu discutable ; un premier modèle avait été entrainené avec les premières images triées manuellement et utilisé ensuite pour faire la selection des autres images du dataset. Cette approach a probablement introduit un biais puisque les images sélectionnées pour l'entraînement du modèle sont ensuite utilisées pour faire la sélection des autres images du dataset, ce qui peut conduire à une sur-représentation de certains types d'images et à une sous-représentation d'autres types d'images. 
+Bien que cette première application fonctionnait plutôt bien, elle était plutôt limitée : seulement 23 espères de plantes étaient reconnues pour ce premier modèles et la plupart des herbes aromatiques bien connues des gens. J’ai donc voulu aller plus loin pour la certification en enrichissant ce dataset avec des classes de fleurs et d'arbres fruitiers, afin de permetttre au modèle de déterminer l'espère de plus de plantes. 
+
+Également, lors de la collecte des images pour ce projet de groupe, j'ai utilisé une approche qui est un peu discutable ; un premier modèle avait été entrainené avec les premières images triées manuellement (environ 800 images), et utilisé ensuite pour faire la selection des autres images du dataset (en selectionnant seulement les images qui correspondait à la classe prédite). Cette approach a probablement introduit un biais puisque les images sélectionnées pour l'entraînement du modèle sont ensuite utilisées pour faire la sélection des autres images du dataset, ce qui peut conduire à une sur-représentation de certains types d'images et à une sous-représentation d'autres types d'images. 
 
 Les objectifs de ce projet de certification sont donc les suivants :
 
@@ -28,10 +30,8 @@ Les objectifs de ce projet de certification sont donc les suivants :
 - Mettre en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives.  
 
 
+Ce rapport a été divisé en plusieurs sections pour présenter de manière claire et structurée les différentes étapes du projet, depuis la collecte des données jusqu'au déploiement du modèle. Chaque section détaille les méthodes utilisées, les résultats obtenus et les leçons apprises tout au long du processus. Il est possible de naviger facilement entre les sections grâce à la table des matières présente sur la bordure gauche de ce rapport.
 
-afin de démontrer ma capacité à collecter, préparer et analyser des données dans un contexte plus large. J'ai collecté plus de 10 000 images supplémentaires pour ces nouvelles classes, en utilisant différentes sources telles que Google Images, Flickr et des bases de données spécialisées. J'ai ensuite appliqué un processus de filtrage automatique pour garantir la qualité et la pertinence des images collectées, en utilisant une combinaison d'extraction d'embeddings avec un modèle pré-entraîné (EfficientNet-B3), de clustering non supervisé pour modéliser la distribution interne de chaque classe, et de classification XGBoost pour exploiter les embeddings dans un modèle tabulaire. Ce processus m'a permis d'améliorer la qualité du dataset avant l'entraînement du modèle final, en automatisant la détection et l'exclusion des images non pertinentes.
-
-Pour la certification, j’ai décidé d’enrichir ce dataset en ajoutant des classes de fleurs et d’arbres fruitiers (20 de fleurs et 13 d'arbres fruitiers), afin de démontrer ma capacité à collecter, préparer et analyser des données dans un contexte plus large. Un modèles a été entrainé sur ce dataset enrichi, et une API de classification d'images de plantes a été déployée. Enfin, j’ai mis en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives.
 
 
 Après avoir collecté toutes ces images, j'ai ensuite entrainé un modèle pré-entrainé EfficientNet-B3 que j'ai adapté aux classes de plantes sélectionnées de ce dataset enrichi. J'ai monitoré au cours de cet entrainement les différentes métriques de mes modèles pour pouvoir prendre la décision de quel modèle sera utilisé pour la prochaine étape. Cette prochaine étape consiste justement a déployé ce modèle sur une API pour permettre à tous et chacun de l'utiliser pour faire la classification d'images de plantes. Finalement, pour assurer la qualité à long terme de mon modèle, j'ai mis en place un système de monitorage pour suivre les performances du modèle en production et détecter les éventuelles dérives.
@@ -39,8 +39,6 @@ Après avoir collecté toutes ces images, j'ai ensuite entrainé un modèle pré
 Pour permttre le déployement de ce modèle et permettre à tous de l'utiliser, j'ai mis en ligne avec une interface utilisateur en utilisant Streamlit, pour permettre une utilisation facile et intuitive. Tout a été réalisé en respectant les bonnes pratiques de la data science, avec une attention particulière portée à la qualité des données et à l'évaluation rigoureuse des modèles.
 
 
-<br><br><br>
-### Pour permettre une navigation plus fluide dans ce rapport, voici une table des matières avec des liens vers les différentes sections :
 
 
 

@@ -12,7 +12,7 @@ import streamlit as st
 from loguru import logger
 
 from i18n import get_language, render_language_selector
-from styles import COLORS, confidence_color
+from styles import COLORS, confidence_color, inject_global_css
 from utils import (
     clear_batch_session_tracking,
     get_batch_bg_state,
@@ -28,6 +28,7 @@ from utils import (
 )
 
 st.set_page_config(page_title="Batch Predict", layout="wide")
+inject_global_css()
 
 # Local API URL - change to your deployed API endpoint if needed
 #API_URL = "http://localhost:8080"
@@ -232,16 +233,16 @@ st.title("Batch Aromatic Herb Predictions" if lang == "en" else "Predictions en 
 st.markdown("""
         - This page lets you run predictions on multiple images at once.
         - Select your images below, then browse result pages.
-        - You can compare predictions from four different models:
-            - PyTorch (ResNet18), sklearn (EfficientNet B3), PyTorch Large, and TensorFlow.
-        - If a prediction falls below your confidence threshold, a warning icon appears near the herb name.
+        - You can compare predictions from five different models:
+            - ResNet50, EfficientNet B3, EfficientNet B4, ConvNext_tiny and MobileNetV3-Large.
+        - If a prediction falls below your confidence threshold, a warning icon appears near the plant name.
             - You can choose the minimum confidence level in the right sidebar.
 """ if lang == "en" else """
         - Cette page vous permet de faire des predictions sur plusieurs images a la fois.
         - Il suffit de les selectionner ci-dessous, puis de naviguer dans les pages de resultats.
-        - Vous pourrez visualiser les predictions de quatre modeles differents :
-            - PyTorch (ResNet18), Sklearn (EfficientNet B3), PyTorch Large et TensorFlow.
-        - Si une prediction est sous la barre des 60% de certitude, un pictogramme apparaitra au niveau du nom de l'aromate.
+        - Vous pourrez visualiser les predictions des cinq modeles qui ont été entrainés sur ce projet:
+            - ResNet50, EfficientNet B3, EfficientNet B4, ConvNext_tiny et MobileNetV3-Large.
+        - Si une prediction est sous la barre des 60% de certitude, un pictogramme apparaitra au niveau du nom de la plante.
             - Il est possible de choisir le niveau de certitude minimal voulu pour la ligne de consensus dans la barre laterale.
 """)
 
@@ -304,7 +305,7 @@ with col_path:
         key=f"predict_uploader_{st.session_state.predict_uploader_key}",
     )
 with col_btn:
-    load_clicked = st.button("Load", use_container_width=True)
+    load_clicked = st.button("Load", width='stretch')
 
 current_uploader_filenames = {f.name for f in uploaded_images} if uploaded_images else set()
 loaded_filenames = {f["name"] for f in st.session_state.predict_image_files}
@@ -381,7 +382,7 @@ if not st.session_state.predict_image_files:
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("### Filters" if lang == "en" else "### Filtres")
-    min_confidence_pct = st.slider("Minimum confidence" if lang == "en" else "Confiance minimale", 60, 100, 60, 5, format="%d%%")
+    min_confidence_pct = st.slider("Minimum confidence" if lang == "en" else "Confiance minimale", 30, 100, 60, 5, format="%d%%")
     min_confidence = min_confidence_pct / 100
     st.caption(
         "Tip: below 60%, retake the photo with better lighting and a closer crop."
@@ -390,7 +391,7 @@ with st.sidebar:
     )
 
     st.markdown("### Export")
-    if st.button("Generate CSV" if lang == "en" else "Generer le CSV", use_container_width=True):
+    if st.button("Generate CSV" if lang == "en" else "Generer le CSV", width='stretch'):
         with st.spinner("Generating CSV..." if lang == "en" else "Generation du CSV en cours..."):
             buf = io.StringIO()
             writer = csv.writer(buf)
@@ -460,7 +461,7 @@ with st.sidebar:
                 buf.getvalue().encode("utf-8"),
                 file_name="predictions.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width='stretch',
             )
 
 # ---------------------------------------------------------------------------
@@ -511,7 +512,7 @@ if predict_mode == MODE_BATCH:
             if lang == "en"
             else f"{len(failed_files)} image(s) en echec peuvent etre relancees sans perdre les resultats deja recus."
         )
-        if st.button("Retry failed batches" if lang == "en" else "Reprendre les lots echoues", use_container_width=True, key="retry_failed_aromates"):
+        if st.button("Retry failed batches" if lang == "en" else "Reprendre les lots echoues", width='stretch', key="retry_failed_aromates"):
             with _BG_STATE["lock"]:
                 _BG_STATE["running"].add(_sid)
             threading.Thread(
@@ -581,7 +582,7 @@ else:
     st.divider()
     p_left, p_mid, p_right = st.columns([1, 2, 1])
     with p_left:
-        if st.button("← Prev", disabled=(page == 0), use_container_width=True):
+        if st.button("← Prev", disabled=(page == 0), width='stretch'):
             st.session_state.predict_page -= 1
             st.rerun()
     with p_mid:
@@ -593,6 +594,6 @@ else:
             st.session_state.predict_page = int(target_page) - 1
             st.rerun()
     with p_right:
-        if st.button("Next →", disabled=(page >= total_pages - 1), use_container_width=True):
+        if st.button("Next →", disabled=(page >= total_pages - 1), width='stretch'):
             st.session_state.predict_page += 1
             st.rerun()

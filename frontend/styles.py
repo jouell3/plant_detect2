@@ -89,14 +89,212 @@ def styled_info_card(title: str, content_dict: dict[str, str], subtitle: str | N
 
 
 def page_header(title: str, description: str = "", icon: str = "") -> None:
-    """Render a consistent page header with title and optional description.
-    
-    Args:
-        title: Page title
-        description: Optional description/introduction text
-        icon: Optional emoji or icon prefix
-    """
+    """Render a consistent page header with title and optional description."""
     full_title = f"{icon} {title}" if icon else title
     st.title(full_title)
     if description:
         st.markdown(description)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Global CSS — botanical theme
+# ─────────────────────────────────────────────────────────────────────────────
+_GLOBAL_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+/* ── Foundations ── */
+html, body { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; }
+[data-testid="stAppViewContainer"] > .main { background-color: #f8f6f1; }
+[data-testid="stHeader"] { background: linear-gradient(90deg, #1a2e23 0%, #2d5a3d 100%); }
+.block-container { padding-top: 1.5rem !important; }
+
+/* ── Headings ── */
+h1 {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    color: #1a2e23 !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.5px !important;
+}
+h2, h3 {
+    font-family: 'Playfair Display', Georgia, serif !important;
+    color: #2d5a3d !important;
+}
+h4, h5, h6 {
+    font-family: 'DM Sans', sans-serif !important;
+    color: #1a2e23 !important;
+    font-weight: 600 !important;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background: linear-gradient(175deg, #1a2e23 0%, #243b2e 100%) !important;
+}
+[data-testid="stSidebar"] * { color: #b8d0bb !important; }
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3 {
+    color: #e0ede0 !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
+}
+[data-testid="stSidebar"] .stCaption * { color: #6a9472 !important; }
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: #2d4a38 !important;
+    border-color: #3d5a48 !important;
+}
+[data-testid="stSidebar"] [data-baseweb="select"] * { color: #c8dcc9 !important; }
+[data-testid="stSidebar"] hr { border-top-color: #2d4a38 !important; }
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p { color: #b8d0bb !important; }
+[data-testid="stSidebar"] .stButton > button {
+    background: #2d4a38 !important;
+    border: 1px solid #3d5a48 !important;
+    color: #c8dcc9 !important;
+}
+
+/* ── Primary / secondary buttons ── */
+.stButton > button {
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    letter-spacing: 0.2px !important;
+    transition: all 0.18s ease !important;
+    border: 1px solid #c8dcc9 !important;
+}
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%) !important;
+    border: none !important;
+    color: white !important;
+    box-shadow: 0 2px 10px rgba(46,125,50,0.28) !important;
+}
+.stButton > button[kind="primary"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 16px rgba(46,125,50,0.40) !important;
+}
+.stButton > button:not([kind="primary"]):hover {
+    border-color: #2e7d32 !important;
+    color: #2e7d32 !important;
+}
+
+/* ── Tabs ── */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px !important;
+    border-bottom: 2px solid #dde5dd !important;
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 500 !important;
+    color: #5a7a62 !important;
+    border-radius: 8px 8px 0 0 !important;
+    padding: 8px 18px !important;
+    background: transparent !important;
+}
+.stTabs [data-baseweb="tab"][aria-selected="true"] {
+    color: #1a2e23 !important;
+    background: #edf3ee !important;
+    border-bottom: 2px solid #2e7d32 !important;
+    font-weight: 600 !important;
+}
+
+/* ── Metric cards ── */
+[data-testid="metric-container"] {
+    background: white !important;
+    border: 1px solid #dde5dd !important;
+    border-radius: 12px !important;
+    padding: 1.1rem 1rem !important;
+    box-shadow: 0 2px 8px rgba(26,46,35,0.07) !important;
+}
+[data-testid="stMetricValue"] {
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 600 !important;
+    color: #1a2e23 !important;
+}
+[data-testid="stMetricLabel"] {
+    font-family: 'DM Sans', sans-serif !important;
+    color: #6a9472 !important;
+    font-size: 0.78rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.7px !important;
+}
+
+/* ── Expanders ── */
+[data-testid="stExpander"] {
+    border: 1px solid #dde5dd !important;
+    border-radius: 10px !important;
+    background: white !important;
+    box-shadow: 0 1px 4px rgba(26,46,35,0.04) !important;
+}
+[data-testid="stExpander"] summary {
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 500 !important;
+    color: #2d5a3d !important;
+}
+
+/* ── File uploader ── */
+[data-testid="stFileUploaderDropzone"] {
+    border: 2px dashed #b0ccb4 !important;
+    border-radius: 12px !important;
+    background: #f0f7f1 !important;
+    transition: all 0.2s !important;
+}
+[data-testid="stFileUploaderDropzone"]:hover {
+    border-color: #2e7d32 !important;
+    background: #e8f5e9 !important;
+}
+
+/* ── Progress bars ── */
+.stProgress > div > div > div > div {
+    background: linear-gradient(90deg, #2e7d32, #66bb6a) !important;
+    border-radius: 999px !important;
+}
+
+/* ── Dividers ── */
+hr {
+    border: none !important;
+    border-top: 1px solid #dde5dd !important;
+    margin: 1.25rem 0 !important;
+}
+
+/* ── Alert boxes ── */
+[data-testid="stAlert"] {
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+}
+
+/* ── Download button ── */
+[data-testid="stDownloadButton"] > button {
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    border: 1px solid #2e7d32 !important;
+    color: #2e7d32 !important;
+    background: white !important;
+}
+[data-testid="stDownloadButton"] > button:hover { background: #e8f5e9 !important; }
+
+/* ── Captions ── */
+[data-testid="stCaptionContainer"] p, .stCaption p {
+    color: #7a9e87 !important;
+    font-size: 0.82rem !important;
+}
+
+/* ── Select boxes ── */
+[data-baseweb="select"] > div { border-radius: 8px !important; }
+
+/* ── Code blocks ── */
+[data-testid="stCode"] { border-radius: 8px !important; }
+
+/* ── Image captions ── */
+[data-testid="stImageCaption"] { color: #7a9e87 !important; font-size: 0.8rem !important; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f0ede8; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #b0ccb4; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2e7d32; }
+</style>
+"""
+
+
+def inject_global_css() -> None:
+    """Inject project-wide CSS overrides for typography, colour, and component polish."""
+    st.markdown(_GLOBAL_CSS, unsafe_allow_html=True)

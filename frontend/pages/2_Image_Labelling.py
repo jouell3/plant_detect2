@@ -5,10 +5,11 @@ from pathlib import Path
 import streamlit as st
 
 from i18n import get_language, render_language_selector
-# Local imports for validation
+from styles import inject_global_css
 from utils import validate_images_batch, show_validation_errors, show_validation_summary
 
 st.set_page_config(page_title="Label Images", layout="wide")
+inject_global_css()
 
 GRID_COLS = 5
 GRID_ROWS = 10
@@ -91,7 +92,7 @@ with st.sidebar:
                 data=labels_to_csv(st.session_state.labels),
                 file_name="labels.csv",
                 mime="text/csv",
-                use_container_width=True,
+                width='stretch',
             )
     else:
         st.info("Load images to start." if lang == "en" else "Chargez des images pour commencer.")
@@ -133,7 +134,7 @@ with col_path:
         key=f"csv_uploader_{st.session_state.label_uploader_key}",
     )
 with col_btn:
-    load_clicked = st.button("Load", use_container_width=True)
+    load_clicked = st.button("Load", width='stretch')
 
 if load_clicked:
     if not uploaded_images:
@@ -192,7 +193,7 @@ for row in range(GRID_ROWS):
                 btn_label,
                 key=f"btn_{start + img_idx}",
                 type=btn_type,
-                use_container_width=True,
+                width='stretch',
             ):
                 st.session_state.labels[key] = "not_selected" if is_good else "good"
                 st.rerun()
@@ -204,7 +205,7 @@ st.divider()
 p_left, p_mid, p_right = st.columns([1, 2, 1])
 
 with p_left:
-    if st.button("← Prev", disabled=(page == 0), use_container_width=True):
+    if st.button("← Prev", disabled=(page == 0), width='stretch'):
         st.session_state.label_page -= 1
         st.rerun()
 
@@ -228,6 +229,6 @@ with p_mid:
         st.rerun()
 
 with p_right:
-    if st.button("Next →", disabled=(page >= total_pages - 1), use_container_width=True):
+    if st.button("Next →", disabled=(page >= total_pages - 1), width='stretch'):
         st.session_state.label_page += 1
         st.rerun()

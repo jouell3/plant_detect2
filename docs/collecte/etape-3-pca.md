@@ -11,9 +11,9 @@ Pour valider visuellement la cohérence des clusters, j’ai appliqué une rédu
 
 Cela permet :
 
-- de vérifier que les classes sont bien séparées,
+- de vérifier qu'on est cappable de voir différent classes et qu'elles sont relativement bien séparées,
 - d’identifier les classes qui se chevauchent,
-- de repérer les images anormales.
+- de déterminer si certaines images, même sélectionnées manuellement, semblent être à l'extérieur de la distribution.
 
 <br>
 
