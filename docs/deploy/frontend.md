@@ -1,9 +1,8 @@
 ---
 layout: default
-title: "Interface utilisateur"
-nav_order: 5
-has_children: true
-has_toc: false
+title: "Déploiement de l'interface utilisateur"
+parent: "Déploiement"
+nav_order: 2
 ---
 
 
@@ -21,5 +20,11 @@ La première étape a été de configuer mon répertoire pour permettre le déve
 
 J'ai voulu garder l'application le plus simple possible. La page d'acceuil détail les différentes fonctionnalité de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes. La deuxième page de l'application permet à l'utilisateur de soit télécharger une image de plante, soit de prendre une image avec la caméra de son téléphone. Une fois cette image téléchargée, l'utilisateur peut faire une prédiction avec les modèles de classification de plantes, et afficher les résultats de manière claire et intuitive. Même si les résultats des tests de performances des différents modèles de classification montre que le modèle le plus performant est le modèle Convnext_tiny, j'ai quand même décidé d'inclure les autres modèles à titre comparatif pour l'utilisateur un peu plus curieux et intéressé par les détails techniques de l'application et surtout des performances de chacun de ces modèles. Je suis conscient que cette architecture peut porter à confusion pour les utilisateurs qui ne sont pas familiers avec les modèles de machine learning, mais j'ai voulu offrir une expérience utilisateur complète et transparente en montrant les résultats de tous les modèles de classification de plantes que j'ai entrainé, même si certains d'entre eux sont moins performants que d'autres. De plus, cela permet à l'utilisateur de mieux comprendre les différences entre les différents modèles de classification de plantes, et de faire un choix éclairé en fonction de ses besoins et de ses préférences. 
 
+<br>
 
+![Frontend main page](../figures/frontend_main.png)
 Figure 1 : Interface utilisateur de l'application Streamlit pour la classification d'images de plantes. La page d'accueil détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes. La deuxième page permet à l'utilisateur de télécharger une image de plante ou de prendre une photo avec la caméra de son téléphone, puis de faire une prédiction avec les modèles de classification de plantes et d'afficher les résultats de manière claire et intuitive.
+
+Il est possible d'accéder à l'application de classification de plantes que j'ai développée en utilisant Streamlit en cliquant sur le lien suivant : 
+
+## [Plant detect application](https://plantpredict.streamlit.app/). 

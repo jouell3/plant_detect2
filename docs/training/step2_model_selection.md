@@ -33,10 +33,3 @@ Comme le modèle ConvNeXt-Tiny a obtenu les meilleures performances globales en 
 
 
 
-![precision](../figures/precision_bycategory.png)
-#### Figure 1 : Precision des modèles par classe et parcatégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories.
-
-<br><br><br>
-
-![F1_score](../figures/F1score_bycategory.png)
-#### Figure 1 : F1-score des modèles par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories.
