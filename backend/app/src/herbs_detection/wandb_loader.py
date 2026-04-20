@@ -33,15 +33,16 @@ def is_cache_valid(local_dir: Path, filenames: list[str],
     return True
 
 
-def artifact_local_path(artifact_name: str, cache_root: Path | None = None) -> Path:
+def artifact_local_path(artifact_name: str, cache_root: Path | None = None,
+                        artifact_type: str = "model") -> Path:
     """
     Return a local directory containing the artifact files.
-    Downloads from wandb if not cached; falls back to a .pth in cwd.
+    Downloads from wandb if not cached; falls back to a .pth in cwd (model type only).
 
     Resolution order:
     1. Local cache (TTL-based) - skip download if a fresh copy exists
     2. wandb registry download
-    3. Local fallback - look for {artifact_name}.pth in cwd
+    3. Local fallback - look for {artifact_name}.pth in cwd (model artifacts only)
     """
     if cache_root is None:
         cache_root = Path.cwd() / "models" / "wandb"
@@ -52,46 +53,68 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None) -> P
         raise ValueError(f"artifact_name must be a plain name, got: {artifact_name!r}")
 
     local_dir = cache_root / safe_name
-    pth_files = list(local_dir.glob("*.pth")) if local_dir.exists() else []
 
-    if pth_files and is_cache_valid(local_dir, [pth_files[0].name]):
+    # For model artifacts, a fresh .pth file is sufficient to confirm cache validity.
+    # For other artifact types (e.g. preprocessor), check any file present.
+    if artifact_type == "model":
+        cached_files = list(local_dir.glob("*.pth")) if local_dir.exists() else []
+    else:
+        cached_files = [p for p in local_dir.iterdir() if p.is_file()] if local_dir.exists() else []
+
+    if cached_files and is_cache_valid(local_dir, [cached_files[0].name]):
+        from .monitoring import monitor
+        monitor.log_artifact_download(artifact_name, 0.0, cache_hit=True)
         return local_dir
 
-    logger.info("Downloading wandb artifact: {}", artifact_name)
+    logger.info("Downloading wandb artifact: {} (type={})", artifact_name, artifact_type)
+    _t0 = time.time()
     try:
         import wandb
         entity_prefix = f"{_WANDB_ENTITY}/" if _WANDB_ENTITY else ""
         ref = f"{entity_prefix}{_WANDB_PROJECT}/{artifact_name}:latest"
-        run = wandb.init(project=_WANDB_PROJECT, job_type="inference",
-                         reinit="finish_previous")
-        try:
-            artifact = run.use_artifact(ref, type="model")
+        api = wandb.Api()
+        artifact = api.artifact(ref, type=artifact_type)
 
-            # Download to temp dir first to prevent cache poisoning if download fails
-            tmp_dir = cache_root / f"{safe_name}.tmp"
-            shutil.rmtree(tmp_dir, ignore_errors=True)
-            tmp_dir.mkdir(parents=True, exist_ok=True)
-            artifact.download(root=str(tmp_dir))
+        # Download to temp dir first to prevent cache poisoning if download fails
+        tmp_dir = cache_root / f"{safe_name}.tmp"
+        shutil.rmtree(tmp_dir, ignore_errors=True)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        artifact.download(root=str(tmp_dir))
 
-            # Atomically replace the destination directory
-            if local_dir.exists():
-                shutil.rmtree(local_dir)
-            tmp_dir.rename(local_dir)
+        # Atomically replace the destination directory
+        if local_dir.exists():
+            shutil.rmtree(local_dir)
+        tmp_dir.rename(local_dir)
 
-            logger.info("Downloaded to {}.", local_dir)
-        finally:
-            run.finish()
+        logger.info("Downloaded to {}.", local_dir)
+        from .monitoring import monitor
+        monitor.log_artifact_download(artifact_name, time.time() - _t0, cache_hit=False)
     except Exception as exc:
         logger.warning("wandb download failed ({}). Trying local fallback.", exc)
-        fallback = Path.cwd() / f"{artifact_name}.pth"
-        if fallback.exists():
-            local_dir.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(fallback, local_dir / fallback.name)
-            logger.info("Using local fallback: {}.", fallback)
+        if artifact_type == "model":
+            fallback = Path.cwd() / f"{artifact_name}.pth"
+            if fallback.exists():
+                local_dir.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(fallback, local_dir / fallback.name)
+                logger.info("Using local fallback: {}.", fallback)
+            else:
+                raise FileNotFoundError(
+                    f"wandb download failed and no local fallback found for {artifact_name}. "
+                    f"Place {artifact_name}.pth in the working directory or set WANDB_API_KEY."
+                ) from exc
         else:
             raise FileNotFoundError(
-                f"wandb download failed and no local fallback found for {artifact_name}. "
-                f"Place {artifact_name}.pth in the working directory or set WANDB_API_KEY."
+                f"wandb download failed for {artifact_type} artifact '{artifact_name}'. "
+                "Set WANDB_API_KEY or place the file manually."
             ) from exc
 
     return local_dir
+
+
+def label_encoder_local_path(cache_root: Path | None = None) -> Path:
+    """
+    Return the local directory containing label_encoder.pkl.
+    Downloads the 'label_encoder' preprocessor artifact from wandb if not cached.
+    The encoder is shared across all models — downloaded once to models/wandb/label_encoder/.
+    """
+    return artifact_local_path("label_encoder", cache_root, artifact_type="preprocessor")
