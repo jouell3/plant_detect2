@@ -1,6 +1,8 @@
 # backend/app/api/main.py
+import os
 import tempfile
 import threading
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -8,7 +10,11 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from loguru import logger
 import uvicorn
 
+import warnings
+warnings.filterwarnings("ignore", message="Could not initialize NNPACK")
+
 from herbs_detection.model_registry import MODEL_REGISTRY, REGISTRY_BY_KEY, ENABLED_KEYS
+from herbs_detection.monitoring import monitor
 from herbs_detection.timm_predictor import TimmPredictor
 
 _predictors: dict[str, TimmPredictor] = {}
@@ -37,10 +43,15 @@ def _resolve_models(models_param: str) -> list[str]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    monitor.start(
+        project=os.getenv("WANDB_PROJECT", "certification"),
+        entity=os.getenv("WANDB_ENTITY", ""),
+    )
     logger.info("Starting up - loading models in background threads...")
     _load_all()
     yield
     logger.info("Shutting down.")
+    monitor.finish()
 
 
 api = FastAPI(lifespan=lifespan)
@@ -75,17 +86,17 @@ async def predict(
         tmp.write(await file.read())
         tmp_path = tmp.name
 
+    results = []
     try:
-        results = [
-            {
+        for key in keys:
+            t0 = time.perf_counter()
+            top3 = _predictors[key].predict_top3(tmp_path)[:top_k]
+            latency_ms = (time.perf_counter() - t0) * 1000
+            monitor.log_prediction(key, top3[0][0], top3[0][1], latency_ms, "predict")
+            results.append({
                 "model": key,
-                "top3": [
-                    {"class": c, "confidence": conf}
-                    for c, conf in _predictors[key].predict_top3(tmp_path)[:top_k]
-                ],
-            }
-            for key in keys
-        ]
+                "top3": [{"class": c, "confidence": conf} for c, conf in top3],
+            })
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
@@ -109,8 +120,15 @@ async def predict_batch(
             tmp_paths.append(tmp.name)
             filenames.append(f.filename)
 
+    per_model = {}
     try:
-        per_model = {key: _predictors[key].predict_set(tmp_paths) for key in keys}
+        for key in keys:
+            t0 = time.perf_counter()
+            preds = _predictors[key].predict_set(tmp_paths)
+            latency_ms = (time.perf_counter() - t0) * 1000 / max(len(tmp_paths), 1)
+            per_model[key] = preds
+            if preds:
+                monitor.log_prediction(key, preds[0][0], preds[0][1], latency_ms, "predict-batch")
     finally:
         for p in tmp_paths:
             Path(p).unlink(missing_ok=True)
@@ -148,19 +166,20 @@ async def explore(
         tmp.write(await file.read())
         tmp_path = tmp.name
 
+    results = []
     try:
-        results = [
-            {
+        for key in keys:
+            t0 = time.perf_counter()
+            top3 = _predictors[key].predict_top3(tmp_path)[:top_k]
+            latency_ms = (time.perf_counter() - t0) * 1000
+            monitor.log_prediction(key, top3[0][0], top3[0][1], latency_ms, "explore")
+            results.append({
                 "model": key,
                 "top_k": [
                     {"rank": i + 1, "class": c, "confidence": conf}
-                    for i, (c, conf) in enumerate(
-                        _predictors[key].predict_top3(tmp_path)[:top_k]
-                    )
+                    for i, (c, conf) in enumerate(top3)
                 ],
-            }
-            for key in keys
-        ]
+            })
     finally:
         Path(tmp_path).unlink(missing_ok=True)
 
