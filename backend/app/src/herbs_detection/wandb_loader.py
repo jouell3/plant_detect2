@@ -48,15 +48,15 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None,
                         artifact_type: str = "model") -> Path:
     """
     Return a local directory containing the artifact files.
-    Downloads from wandb if not cached; falls back to a .pth in cwd (model type only).
+    Downloads from wandb if not cached; falls back to a .pth in cache_root (model type only).
 
     Resolution order:
     1. Local cache (TTL-based) - skip download if a fresh copy exists
     2. wandb registry download
-    3. Local fallback - look for {artifact_name}.pth in cwd (model artifacts only)
+    3. Local fallback - look for {artifact_name}.pth in cache_root (model artifacts only)
     """
     if cache_root is None:
-        cache_root = Path.cwd() / "models" / "wandb"
+        cache_root = Path(os.getenv("MODEL_PATH", str(Path.cwd() / "models" / "wandb")))
 
     # Validate artifact_name to prevent path traversal attacks
     safe_name = Path(artifact_name).name
@@ -113,7 +113,7 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None,
         except Exception as exc:
             logger.warning("wandb download failed ({}). Trying local fallback.", exc)
             if artifact_type == "model":
-                fallback = Path.cwd() / f"{artifact_name}.pth"
+                fallback = cache_root / f"{artifact_name}.pth"
                 if fallback.exists():
                     local_dir.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(fallback, local_dir / fallback.name)
