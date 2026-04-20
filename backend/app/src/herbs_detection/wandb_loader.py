@@ -87,8 +87,6 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None,
         tmp_dir.rename(local_dir)
 
         logger.info("Downloaded to {}.", local_dir)
-        from .monitoring import monitor
-        monitor.log_artifact_download(artifact_name, time.time() - _t0, cache_hit=False)
     except Exception as exc:
         logger.warning("wandb download failed ({}). Trying local fallback.", exc)
         if artifact_type == "model":
@@ -108,6 +106,8 @@ def artifact_local_path(artifact_name: str, cache_root: Path | None = None,
                 "Set WANDB_API_KEY or place the file manually."
             ) from exc
 
+    from .monitoring import monitor
+    monitor.log_artifact_download(artifact_name, time.time() - _t0, cache_hit=False)
     return local_dir
 
 

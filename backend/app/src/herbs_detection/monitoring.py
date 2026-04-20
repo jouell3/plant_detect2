@@ -47,33 +47,39 @@ class WandbMonitor:
     def log_artifact_download(self, artifact_name: str, duration_s: float, cache_hit: bool) -> None:
         if not self._active:
             return
-        with self._lock:
-            step = self._step
-            self._step += 1
-        self._run.log({
-            f"startup/{artifact_name}/download_duration_s": duration_s,
-            f"startup/{artifact_name}/cache_hit": int(cache_hit),
-        }, step=step)
+        try:
+            with self._lock:
+                step = self._step
+                self._step += 1
+            self._run.log({
+                f"startup/{artifact_name}/download_duration_s": duration_s,
+                f"startup/{artifact_name}/cache_hit": int(cache_hit),
+            }, step=step)
+        except Exception as exc:
+            logger.warning("WandB log_artifact_download failed: {}", exc)
 
     def log_prediction(self, model_key: str, top1_class: str, confidence: float,
                        latency_ms: float, endpoint: str) -> None:
         if not self._active:
             return
-        with self._lock:
-            step = self._step
-            self._step += 1
-        self._run.log({
-            f"{model_key}/latency_ms": latency_ms,
-            f"{model_key}/confidence": confidence,
-        }, step=step)
-        self._table.add_data(
-            time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-            endpoint,
-            model_key,
-            top1_class,
-            confidence,
-            latency_ms,
-        )
+        try:
+            with self._lock:
+                step = self._step
+                self._step += 1
+            self._run.log({
+                f"{model_key}/latency_ms": latency_ms,
+                f"{model_key}/confidence": confidence,
+            }, step=step)
+            self._table.add_data(
+                time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                endpoint,
+                model_key,
+                top1_class,
+                confidence,
+                latency_ms,
+            )
+        except Exception as exc:
+            logger.warning("WandB log_prediction failed: {}", exc)
 
 
 monitor = WandbMonitor()
