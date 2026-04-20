@@ -7,7 +7,11 @@ import pandas as pd
 import requests
 import streamlit as st
 
-API_URL = "https://plant-predictor-966041648100.europe-west1.run.app"
+# Local API URL - change to your deployed API endpoint if needed
+API_URL = "http://localhost:8080"
+
+# Deployed API URL (replace with your actual endpoint)
+#API_URL = "https://plant-predictor-966041648100.europe-west1.run.app"
 
 st.set_page_config(page_title="Model Monitoring", layout="wide")
 
