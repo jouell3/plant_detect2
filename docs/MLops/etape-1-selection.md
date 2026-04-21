@@ -6,9 +6,11 @@ nav_order: 1
 ---
 
 ## Monitorage durant la sélection du modèle
+<br>
 
 Comme discuter dans la section "Entrainement du modèle", j'ai entrainé 5 modèles différents (EfficientNet-B3, ResNet-50, DenseNet-121, ConvNeXt-Tiny et MobileNetV3-Large) pour la classification d’images de plantes. Pendant l'entrainement, j'ai suivi les différentes métriques de performance (précision, rappel, F1-score) pour évaluer les performances des différents modèles et prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API. J'ai utilisé Weights & Biases pour suivre les différentes métriques d’entrainement en temps réel, et de comparer facilement les performances des différents modèles pour prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API. Le monitorage durant la sélection du modèle est essentiel pour assurer la qualité du modèle choisi, en permettant de détecter rapidement les problèmes et de prendre des mesures correctives si nécessaire.
 
+<br><br>
 
 ![initial training des 5 modèles](../figures/initial_training_combined.png)
 ##### Figure 1: Monitorage des différentes métriques d’entrainement pour les 5 modèles testés (EfficientNet-B3, ResNet-50, DenseNet-121, ConvNeXt-Tiny et MobileNetV3-Large) pour la classification d’images de plantes. Ces graphiques ont été générés avec Weights & Biases, qui m'a permis de suivre les différentes métriques d’entrainement en temps réel, et de comparer facilement les performances des différents modèles pour prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API.
@@ -36,3 +38,9 @@ Pour rappel, la **précision** est la proportion d'images correctement classées
 ![Précision des différents modèles sur toutes les classes ](../figures/precision_heatmap_allmodels.png)
 
 ##### Figure 2 : F1-score et présisions des différents modèles sur toutes les classes. On observe que le modèle ConvNeXt-Tiny a des performances globalement élevées, avec quelques variations entre les classes et catégories. Les autres modèles ont des performances plus variables, avec des points faibles sur certaines classes.
+
+<br>
+
+### **Conclusion**
+
+En conclusion, le monitorage durant la sélection du modèle est essentiel pour assurer la qualité du modèle choisi, en permettant de détecter rapidement les problèmes et de prendre des mesures correctives si nécessaire. En utilisant des outils de monitorage tels que Weights & Biases, j'ai pu suivre les différentes métriques d’entrainement en temps réel, m'assurer que ces métriques sont bien sauvegardées pour consultation future et de comparer facilement les performances des différents modèles pour prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API. Le modèle ConvNeXt-Tiny a clairement été meilleur pour la classification d’images de plantes, avec des performances élevées en termes de précision et de F1-score.

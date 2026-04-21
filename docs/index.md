@@ -10,12 +10,12 @@ nav_order: 1
 
 ## Introduction et Expression du besoin
 
-### Context du projet
+### **Context du projet**
 
 Pour cette certification, j’ai choisi de construire un classifieur d’images de plantes, avec un focus particulier sur les **fleurs, les aromates et les arbres fruitiers**. Ce travail a été initié lors du projet final de la formation Data Science et AI donné par Artiefact School of data. Avec 3 autres de mes colègues de promotion, nous avons collecté un dataset de plus de 27 000 images réparties sur 23 classes différentes d'aromate que nous avions utilisées porur entrainer nos 4 modèles différents de reconnaissance d'aromates. 
 
 
-### Expression du besoin
+### **Expression du besoin**
 
 Bien que cette première application fonctionnait plutôt bien, elle était limitée : seulement 23 espères de plantes étaient reconnues pour ce premier modèles et la plupart des herbes aromatiques reconnues  pour nos mod;les étaient bien connues des gens. J’ai donc voulu aller plus loin pour la certification en enrichissant ce dataset avec des classes de fleurs et d'arbres fruitiers, afin de permetttre au modèle de déterminer l'espère de plus de plantes. Cet outil de classification d'images de plantes pourrait être très utile pour les jardiniers amateurs, les botanistes, les agriculteurs, ou même les simples curieux qui veulent identifier une plante qu'ils ont trouvée dans la nature. 
 

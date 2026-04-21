@@ -8,7 +8,7 @@ nav_order: 1
 
 ## Étape 1 — Entrainement des modèles de classification de plantes
 
-### 🎯 *Objectif de l'étape*
+### **Objectif de l'étape**
 
 Dans cette première étape, le but était d'entrainer différents modèles de classification de plantes à partir des images collectées. Pour ce faire, je suis parti de modèles pré-entrainés sur ImageNet, tels que EfficientNet-B3/B4, ResNet-50, MobileNetV3-Large et ConvNeXt-Tiny, que j'ai adapté à mon dataset de plantes. L'entrainement c'est fait en deux étapes:
 
@@ -48,12 +48,12 @@ Petit rappel, voici les modèles que j,ai utilisé pour cette étape d'entrainem
 - **Embedding** : 1280  
 - **Usage idéal** : mobile / edge computing  
 
-## Préparation des données et entrainement
+### **Préparation des données et entrainement**
 
 Pour un bon entrainement, il est important de préparer les données de manière adéquate. J'ai utilisé des techniques d'augmentation de données (changement de couleur, rotation, mise à l'échelle par example) pour augmenter la diversité de mon dataset et ainsi éviter au maximum le surapprentissage. J'ai également utilisé une validation croisée pour évaluer les performances de mes modèles pendant l'entrainement (les données initiales ont été séparées en jeu d'entrainement et jeu de validation, à une proportion de 80/20 et en gardant les proportions de chaque classe). Finalement, pour combler l'imbalance qu'il y avait entre les différentes classes, j'ai utilisé une technique de matrice de poids pour les classes minoritaires et majoritairesafin pour équilibrer lors du calcul de la perte et permettre au modèle d'apprendre de manière plus efficace à partir de toutes les classes.
 
 
-## Résults
+### **Résults**
 
 Au cours de l'entrainement, j'ai monitoré les différentes métriques d’entrainement, telles que la précision et la perte, à l'aide d'outils de monitoring disponible en ligne (discuter plsu en détail dans la section suivante). J'ai également utilisé des techniques de visualisation pour mieux comprendre les performances de mes modèles, comme les courbes d'apprentissage et les matrices de confusion. Comme l'apprentissage est une tâche gourmande en ressources, j'ai utilisé les GPU disponibles sur Google Colab pour accélérer le processus d'entrainement et réduire le temps nécessaire pour obtenir des résultats significatifs.
 

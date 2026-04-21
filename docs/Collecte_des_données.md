@@ -7,9 +7,9 @@ has_toc: false
 ---
 
 
-# Première étape: Collecte de données
+## Première étape: Collecte de données
 
-### 🎯 *Objectif du module*
+## *Objectif du module*
 
 <br>
 

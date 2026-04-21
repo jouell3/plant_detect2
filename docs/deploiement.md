@@ -8,11 +8,11 @@ has_toc: false
 
 # Deploiement du modèle de classification de plantes
 
-### 🎯 *Objectif du module*
+## *Objectif du module*
 
 Afin de pouvoir utiliser le modèle de classification de plantes que j'ai entrainé dans les étapes précédentes, j'ai déployé sur une API pour permettre à tous et chacun de l'utiliser pour faire la classification d'images de plantes. Cette étape de déploiement est cruciale pour rendre le modèle accessible et utilisable par un large public, et pour permettre à d'autres personnes de bénéficier des résultats de mon travail.
 
-### Architecture de l'application
+### **Architecture de l'application**
 
 L'architecture de mon application de classification de plantes est composée de deux parties principales : le backend, qui héberge l'API de classification de plantes, et le frontend, qui fournit une interface utilisateur pour interagir avec l'API. Le backend est développé en utilisant FastAPI, un micro-framework web en Python, qui permet de créer une API RESTful pour recevoir des images de plantes, les traiter et retourner les prédictions des modèles. Le frontend est développé en utilisant Streamlit, une bibliothèque Python qui permet de créer des applications web interactives de manière simple et rapide, et qui offre une intégration facile avec les bibliothèques de data science et de machine learning en Python. Le frontend permet aux utilisateurs de télécharger des images de plantes, de faire des prédictions avec les modèles de classification de plantes, et d'afficher les résultats de manière claire et intuitive. L'architecture de l'application est conçue pour être simple et efficace, en permettant une communication fluide entre le frontend et le backend, et en offrant une expérience utilisateur agréable et intuitive pour faire la classification d'images de plantes.
 

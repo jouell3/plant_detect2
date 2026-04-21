@@ -63,11 +63,15 @@ Chaque image est passée dans un modèle EfficientNet‑B3 pré‑entraîné par
 ![efficientNetB3 structure](../figures/EfficientnetB3.png)
 ##### Figure 1 : Structure du modèle EfficientNet‑B3. On utilise la sortie du bloc convolutionnel pour extraire les embeddings de chaque image, qui sont ensuite utilisés pour le clustering et la classification XGBoost.
 
+<br><br>
+
 Ce vecteur représente l’image dans un espace latent où des images similaires sont proches les unes des autres.
 
 **Résultat :**
 
+À la fin de cette étape, j'ai obtenu pour les 8001 images sélectionnées manuellement :
+
 - un tableau `embeddings` de taille `(8001, 1536)`
 - un tableau `labels` de taille `(8001,)`
 
-Ces embeddings ont servi de base pour les étapes suivantes.
+Ces embeddings ont servi de base pour l'étape suivante : [le clustering](/home/jouell/code/jouell3/plant_detect2/docs/collecte/etape-2-clustering.md).
