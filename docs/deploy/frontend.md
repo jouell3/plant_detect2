@@ -93,15 +93,52 @@ WEIGHTS = {
 }
 
 def weighted_vote(predictions):
+    # Étape 1 — sélection de l'espèce gagnante
     scores = defaultdict(float)
     for item in predictions:
         w = WEIGHTS[item["model"]]
-        top1 = item["top1"]
-        scores[top1["class"]] += w * top1["confidence"]
-    return max(scores, key=scores.get)
+        scores[item["top1"]["class"]] += w * item["top1"]["confidence"]
+    winner = max(scores, key=scores.get)
+
+    # Étape 2 — confiance affichée : moyenne pondérée des modèles concordants
+    weight_sum = weighted_conf = 0.0
+    for item in predictions:
+        if item["top1"]["class"] == winner:
+            w = WEIGHTS[item["model"]]
+            weighted_conf += w * item["top1"]["confidence"]
+            weight_sum += w
+    return winner, weighted_conf / weight_sum
 ```
 
-Seule la prédiction top-1 de chaque modèle est prise en compte (et non l'ensemble de la distribution), ce qui est cohérent avec l'endpoint `/predict-batch` qui ne retourne qu'un top-1 par modèle. ConvNeXt-Tiny (95.4 %) pèse donc davantage que ResNet-50 (86.2 %) dans le résultat final. Le score de confiance affiché est la part normalisée du score pondéré de l'espèce gagnante sur la somme totale des scores.
+Seule la prédiction top-1 de chaque modèle est prise en compte, ce qui est cohérent avec l'endpoint `/predict-batch` qui ne retourne qu'un top-1 par modèle. L'algorithme fonctionne en deux étapes : d'abord la sélection de l'espèce gagnante par accumulation des scores pondérés, puis le calcul d'un score de confiance affiché. Ce score est la **moyenne pondérée des confiances des modèles concordants uniquement** — il reste donc ancré dans les sorties réelles des modèles et ne peut jamais dépasser la confiance individuelle la plus élevée parmi ceux qui s'accordent. ConvNeXt-Tiny (95.4 %) pèse davantage que ResNet-50 (86.2 %) dans les deux étapes.
+
+#### Exemple concret
+
+| Modèle | Poids | Top-1 | Confiance |
+|---|---|---|---|
+| ConvNeXt-Tiny | 0.954 | **Fraise** | 69.5 % |
+| EfficientNet-B3 | 0.929 | **Fraise** | 59.5 % |
+| EfficientNet-B4 | 0.928 | Lisianthus | 17.2 % |
+| MobileNetV3 | 0.879 | **Fraise** | 24.0 % |
+| ResNet-50 | 0.862 | Zinnia | 16.5 % |
+
+**Étape 1 — sélection du gagnant :**
+
+| Espèce | Score accumulé |
+|---|---|
+| Fraise | 0.954×0.695 + 0.929×0.595 + 0.879×0.240 = **1.43** |
+| Lisianthus | 0.928×0.172 = 0.16 |
+| Zinnia | 0.862×0.165 = 0.14 |
+
+→ **Fraise** remporte le vote.
+
+**Étape 2 — confiance affichée (moyenne pondérée des modèles concordants) :**
+
+```
+(0.954×0.695 + 0.929×0.595 + 0.879×0.240) / (0.954 + 0.929 + 0.879) = 1.43 / 2.76 ≈ 51.7 %
+```
+
+Le score affiché (51.7 %) reste ancré dans les confiances réelles des modèles qui s'accordent, sans jamais dépasser la confiance individuelle la plus élevée (69.5 % pour ConvNeXt-Tiny).
 
 <br>
 

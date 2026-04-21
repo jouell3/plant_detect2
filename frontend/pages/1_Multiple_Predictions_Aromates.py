@@ -206,9 +206,14 @@ def _weighted_vote_rows(rows: list[dict]) -> tuple[str, float]:
     for r in rows:
         w = _MODEL_WEIGHTS.get(r["model"], 1.0)
         scores[r["species"]] += w * r["confidence"]
-    top = sorted(scores.items(), key=lambda x: -x[1])
-    total = sum(s for _, s in top)
-    return top[0][0], top[0][1] / total if total else 0.0
+    winner = max(scores, key=scores.get)
+    weight_sum = weighted_conf = 0.0
+    for r in rows:
+        if r["species"] == winner:
+            w = _MODEL_WEIGHTS.get(r["model"], 1.0)
+            weighted_conf += w * r["confidence"]
+            weight_sum += w
+    return winner, weighted_conf / weight_sum if weight_sum else 0.0
 
 
 def _soft_consensus_line(top_species: str, ensemble_conf: float, disagreement: bool = False, low_confidence: bool = False) -> str:

@@ -43,11 +43,15 @@ def _weighted_vote(predictions: list[dict]) -> tuple[str, float]:
     scores: dict[str, float] = defaultdict(float)
     for item in predictions:
         w = _MODEL_WEIGHTS.get(item["model"], 1.0)
-        top1 = item["top3"][0]
-        scores[top1["class"]] += w * top1["confidence"]
-    top = sorted(scores.items(), key=lambda x: -x[1])
-    total = sum(s for _, s in top)
-    return top[0][0], top[0][1] / total if total else 0.0
+        scores[item["top3"][0]["class"]] += w * item["top3"][0]["confidence"]
+    winner = max(scores, key=scores.get)
+    weight_sum = weighted_conf = 0.0
+    for item in predictions:
+        if item["top3"][0]["class"] == winner:
+            w = _MODEL_WEIGHTS.get(item["model"], 1.0)
+            weighted_conf += w * item["top3"][0]["confidence"]
+            weight_sum += w
+    return winner, weighted_conf / weight_sum if weight_sum else 0.0
 
 
 st.set_page_config(page_title="Plant Predictor", layout="wide")

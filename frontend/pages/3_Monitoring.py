@@ -2,7 +2,7 @@ import csv
 import io
 import sys
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -17,6 +17,24 @@ from styles import inject_global_css
 
 # Deployed API URL (replace with your actual endpoint)
 API_URL = "https://plant-predictor-966041648100.europe-west1.run.app"
+
+_MODEL_WEIGHTS = {
+    "convnext_tiny":     0.954,
+    "efficientnet_b3":   0.929,
+    "efficientnet_b4":   0.928,
+    "mobilenetv3_large": 0.879,
+    "resnet50":          0.862,
+}
+
+
+def _weighted_winner(row: dict, model_keys: list[str]) -> str:
+    scores: dict[str, float] = defaultdict(float)
+    for k in model_keys:
+        if k in row:
+            w = _MODEL_WEIGHTS.get(k, 1.0)
+            scores[row[k]["class"]] += w * row[k]["confidence"]
+    return max(scores, key=scores.get) if scores else ""
+
 
 st.set_page_config(page_title="Model Monitoring", layout="wide")
 inject_global_css()
@@ -65,11 +83,7 @@ def _build_table_html(rows: list[dict], model_keys: list[str]) -> str:
     )
     body_rows = []
     for i, row in enumerate(rows):
-        classes = [row[k]["class"] for k in model_keys if k in row]
-        counts = Counter(classes)
-        top_count = counts.most_common(1)[0][1] if counts else 0
-        winners = [cls for cls, cnt in counts.items() if cnt == top_count]
-        majority = winners[0] if len(winners) == 1 else ""
+        majority = _weighted_winner(row, model_keys)
         row_bg = "#ffffff" if i % 2 == 0 else "#f8f6f1"
         cells = [
             f'<td style="padding:8px 12px;color:#5a7a62;font-size:0.85rem;'
@@ -82,7 +96,7 @@ def _build_table_html(rows: list[dict], model_keys: list[str]) -> str:
             val = row[k]
             conf: float = val["confidence"]
             cls: str = val["class"]
-            strong_consensus = cls == majority and majority != "" and top_count >= 3
+            strong_consensus = cls == majority and majority != ""
             if conf < 0.4:
                 bg = "#fdf0f2"
                 text_color = "#c62828"
@@ -205,8 +219,8 @@ if recent and model_keys:
         "Confidence below 40%</span>"
         "<span style='font-size:0.84rem;color:#444;display:flex;align-items:center;gap:7px'>"
         "<span style='font-size:0.9rem;font-weight:700;color:#1a2e23'>B</span>"
-        "<strong>Bold name</strong> — 3 or more models agree on this species</span>"
-        "<span style='font-size:0.84rem;color:#9aafb0'>Normal text = fewer than 3 models agree</span>"
+        "<strong>Bold name</strong> — weighted majority vote winner</span>"
+        "<span style='font-size:0.84rem;color:#9aafb0'>Normal text = not the weighted vote winner</span>"
         "</div>",
         unsafe_allow_html=True,
     )
