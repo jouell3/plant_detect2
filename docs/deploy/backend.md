@@ -18,6 +18,22 @@ Une fois tous ces tests locaux réussis, j'ai pu construire l'image Docker de mo
 
 Finalement, une fois que l'image était sur Artifact Registry, j'ai utilisé Google Cloud Run, un service de compute sans serveur qui permet de déployer des applications conteneurisées, pour déployer mon application sur GCS. J'ai configuré Cloud Run pour utiliser l'image Docker que j'avais poussée vers Artifact Registry, et j'ai défini les paramètres de déploiement tels que la région, les ressources allouées et les autorisations d'accès. Une fois le déploiement terminé, mon application était accessible via une URL publique fournie par Cloud Run, ce qui permet à n'importe qui de faire des requêtes à l'API pour obtenir des prédictions de classification de plantes. L'idée était ici de faire en sorte que le frontend puisse communiquer avec le backend de manière fluide et transparente, en utilisant l'URL publique fournie par Cloud Run pour faire les requêtes à l'API et obtenir les résultats de classification de plantes.
 
-L'API est disponible à l'adresse suivante : 
+Voici une vue d'ensemble des différentes API qui sont disponoble via cette URL publique, et qui permettent de faire des prédictions de classification de plantes à partir d'images :
+
+![FastAPI](../figures/fastAPI.png)
+#### Figure 1 : Vue d'ensemble des différentes routes de l'API de classification de plantes, qui sont disponibles via l'URL publique fournie par Cloud Run. Ces routes permettent de faire des prédictions de classification de plantes à partir d'images, en utilisant les différents modèles de classification de plantes que j'ai entrainé et déployé sur GCS. Les utilisateurs peuvent faire des requêtes à ces routes pour obtenir des prédictions précises et rapides pour leurs images de plantes, ce qui rend l'application accessible et utile pour un large public.
+
+J'ai mis en place 3 types d'API : 
+
+- Une première API qui permet d'obtenir plus d'informatin sur les modèles utilisés pour la classification de plantes, y compris les différentes classes de plantes que chaque modèle peut identifier.
+- une classe d'API de classification de plantes à partir d'images, qui permet aux utilisateurs de faire des prédictions de classification de plantes en envoyant des images à l'API soit seul (/predict) ou en batch (/predict-batch) pour faire des prédictions sur plusieurs images à la fois.
+- une classe d'API de monitoring, qui permet de suivre les performances du modèle en production en enregistrant les différentes prédictions faites par le modèle, ainsi que les différentes métriques de performance (surtout au niveau de la précision et de la confiance) pour chaque classe. 
+
+
+Les données de prédictions sont enregistrées en temps réel sur l'application Weight and Biases, mais j'ai aussi mis en place un système de monitoring en temps réel sur le frontend, qui permet à l'utilisateur de suivre les performances du modèle en production. Il existe 2 API distincts pour obternir les données de monitoring : une API qui permet d'obtenir les données de monitoring pour les 20 dernières predictions (/metrics), et une API qui permet d'obtenir toutes les données de prediction en un seul appel (/metrics/predictions) pour pouvoir les exporter avec facilité.
+
+<br><br><br>
+
+Les différentes API sont disponibles à l'adresse suivante : 
 
 ## [Plant detect API](https://plantdetectapi-2a5a6b4c0e-uc.a.run.app/).

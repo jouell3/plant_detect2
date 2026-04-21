@@ -22,9 +22,41 @@ J'ai voulu garder l'application le plus simple possible. La page d'acceuil déta
 
 <br>
 
-![Frontend main page](../figures/frontend_main.png)
-Figure 1 : Interface utilisateur de l'application Streamlit pour la classification d'images de plantes. La page d'accueil détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes. La deuxième page permet à l'utilisateur de télécharger une image de plante ou de prendre une photo avec la caméra de son téléphone, puis de faire une prédiction avec les modèles de classification de plantes et d'afficher les résultats de manière claire et intuitive.
+Voici un example de chacune des pages de l'application Streamlit que j'ai développée pour la classification d'images de plantes: 
 
+<br>
+
+![Frontend main page](../figures/frontend_main.png)
+Figure 1 : Page d'acceuil de l'application Streamlit pour la classification d'images de plantes. cette page détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes.
+
+
+<br><br>
+![Page single prediction](../figures/page1.png)
+
+
+#### Figure 2 : Page de l'application Streamlit pour faire une prédiction de classification de plantes à partir d'une image téléchargée ou prise avec la caméra du téléphone. L'utilisateur peut faire une prédiction avec les modèles de classification de plantes, et afficher les résultats de manière claire et intuitive. Lorsque la plante est identifiée, on appercois une fiche descriptive de cette plante avec quelques conseils de culture et si la plante est commestible, il y a même des sugegstions de recettes. Finallement, pour les utilisateurs plus curieux, il est possible de visualiser les différentes classes de plantes que le modèle a identifié, ainsi que les différentes probabilités associées à chaque classe.
+
+<br><br>
+
+![Prediction en batch](../figures/page2.png)
+
+#### Figure 3 : Page de l'application Streamlit pour faire des prédictions de classification de plantes en batch à partir de plusieurs images téléchargées. L'utilisateur peut faire des prédictions avec les modèles de classification de plantes soit en envoyant les images une par une, soit en les envoyant toutes en même temps (elles seront traitées par batch de 20 par le backend pour permettre un affichage plus rapide des résultats. La page sera rafraichie à chaque fois que les résultats du prochain batch de 20 images sont disponibles).
+
+<br><br>
+
+![Page monitoring](../figures/page_monitoring.png)
+
+#### Figure 4 : Page de l'application Streamlit pour le monitoring en temps réel des performances du modèle de classification de plantes en production. Cette page permet à l'utilisateur de suivre les différentes prédictions faites par le modèle, ainsi que les différentes métriques de performance (surtout au niveau de la précision et de la confiance) pour chaque classe, en affichant ces informations de manière claire et intuitive pour permettre à l'utilisateur de mieux comprendre les performances du modèle en production.
+
+
+### Conclusion
+
+En conclusion, la création d'une interface utilisateur avec Streamlit pour la classification d'images de plantes a été une étape cruciale pour rendre les modèles de classification de plantes accessibles à un large public. En utilisant Streamlit, j'ai pu créer une application web interactive qui permet aux utilisateurs de télécharger des images de plantes, de faire des prédictions avec les modèles de classification de plantes, et d'afficher les résultats de manière claire et intuitive. Cette interface utilisateur offre une expérience agréable et facile à utiliser pour faire la classification d'images de plantes, et permet à chacun de bénéficier des résultats de mon travail de manière simple et efficace.
+
+
+<br><br><br>
+
+---
 Il est possible d'accéder à l'application de classification de plantes que j'ai développée en utilisant Streamlit en cliquant sur le lien suivant : 
 
 ## [Plant detect application](https://plantpredict.streamlit.app/). 

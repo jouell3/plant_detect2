@@ -68,10 +68,17 @@ def root():
 
 @api.get("/models")
 def list_models():
-    return [
+    list_models = [
         {"key": cfg.key, "timm_name": cfg.timm_name, "img_size": cfg.img_size}
-        for cfg in MODEL_REGISTRY if cfg.enabled
-    ]
+        for cfg in MODEL_REGISTRY if cfg.enabled]
+    list_classes = {
+        "Aromatic herbs (23)": "Angelica, Basil, Borage, Chamomile, Chives, Coriander, Dill, Fennel, Hyssop, Lavender, Lemongrass, Lemon Verbena, Lovage, Mint, Mugwort, Oregano, Parsley, Rosemary, Sage, Savory, Tarragon, Thyme, Wintergreen",
+        "Flowers (19)": "Daisy, Hellebore, Iris, Gerbera, Allium, Sunflower, Chrysanthemum, Freesia, Lisianthus, Ranunculus, Wisteria, Foxglove, Gypsophila, Cosmos, Poppy, Hydrangea, Zinnia, Lily, Bird of Paradise",
+        "Trees & berries (16)": "Blackberry, Blueberry, Cherry, Cranberry, Fig, Grape, Kiwi, Lemon, Melon, Peach, Pear, Raspberry, Strawberry, Apple, Plum, Apricot",
+    }
+
+    return [ list_models, list_classes]
+    
 
 
 @api.get("/metrics")
