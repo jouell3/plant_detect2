@@ -19,7 +19,7 @@ Cela permet :
 
 ![PCA des embedings](../figures/PCA.png)
 
-#### Figure 1 : Visualisation des embeddings avec PCA, colorés par classe. On observe une bonne séparation entre les classes, avec quelques chevauchements.
+##### Figure 1 : Visualisation des embeddings avec PCA, colorés par classe. On observe une bonne séparation entre les classes, avec quelques chevauchements.
 
 ## **Interprétation**
 

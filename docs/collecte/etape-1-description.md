@@ -61,7 +61,7 @@ Une image est acceptée si elle est à la fois **visuellement proche** des image
 Chaque image est passée dans un modèle EfficientNet‑B3 pré‑entraîné par ImageNet. Ce modèle a été choisi pour sa bonne performance sur les tâches de classification d'images, tout en étant relativement léger et rapide à exécuter. Ce modèle correspond à une série de couches convolutionnelles qui extraient des caractéristiques visuelles de l'image à différents niveaux d'abstraction. On récupère la sortie de ce bloc convolutionnel un vecteur de dimension fixe (1536 features dans le cas de EfficientNet-B3).
 
 ![efficientNetB3 structure](../figures/EfficientnetB3.png)
-
+##### Figure 1 : Structure du modèle EfficientNet‑B3. On utilise la sortie du bloc convolutionnel pour extraire les embeddings de chaque image, qui sont ensuite utilisés pour le clustering et la classification XGBoost.
 
 Ce vecteur représente l’image dans un espace latent où des images similaires sont proches les unes des autres.
 

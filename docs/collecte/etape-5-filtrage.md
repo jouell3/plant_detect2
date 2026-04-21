@@ -53,13 +53,13 @@ En appliquant ce filtrage sur les nouvelles images collectées, j’ai pu rédui
 
 ![selection d'image](../figures/filtering.png)
 
-#### Figure 1. Exemple de filtrage automatique : chaque ligne représente les résultats pour une image collectée. Les deux critères de filtrage sont indiqués : la confiance XGBoost (la clé "confiance") et la distance au centroïde (la clé "distance"). Si cette distance est inférieure au seuil défini pour la classe (indiqué par "seuil"), et que la confiance est inférieur à 0,1, alors l'image est acceptée (is_valid = True), sinon elle est rejetée (is_valid = False). 
+##### Figure 1. Exemple de filtrage automatique : chaque ligne représente les résultats pour une image collectée. Les deux critères de filtrage sont indiqués : la confiance XGBoost (la clé "confiance") et la distance au centroïde (la clé "distance"). Si cette distance est inférieure au seuil défini pour la classe (indiqué par "seuil"), et que la confiance est inférieur à 0,1, alors l'image est acceptée (is_valid = True), sinon elle est rejetée (is_valid = False). 
 
 
 
 
 
-#### Figure 2. Exemple de filtrage automatique : les images en vert sont acceptées, celles en rouge sont rejetées. On observe que les images rejetées sont souvent floues, avec des angles atypiques ou des objets parasites, tandis que les images acceptées sont plus nettes et présentent la plante de manière plus claire.
+##### Figure 2. Exemple de filtrage automatique : les images en vert sont acceptées, celles en rouge sont rejetées. On observe que les images rejetées sont souvent floues, avec des angles atypiques ou des objets parasites, tandis que les images acceptées sont plus nettes et présentent la plante de manière plus claire.
 
 
 ## Resultats
@@ -70,7 +70,7 @@ En combiannt les images du dataset originale avec les nouvelles images filtrées
 
 ![Distribute final des images dans les 58 classe](../figures/distributions.png)
 
-#### Figure 3. Distribution finale du nombre d'images par classe après filtrage automatique. On observe que la plupart des classes ont entre 800 et 1500 images, avec quelques classes plus représentées (ex : Ciboulette et thym) et d'autres moins représentées (ex : kiwi et livèche).
+##### Figure 3. Distribution finale du nombre d'images par classe après filtrage automatique. On observe que la plupart des classes ont entre 800 et 1500 images, avec quelques classes plus représentées (ex : Ciboulette et thym) et d'autres moins représentées (ex : kiwi et livèche).
 
 <br><br><br>
 Pour plus d'information et voir le code en détail, vous pouvez visiter le notebook Jupyter correspondant à cette étape : [Script pour scraping, avec filtrage](/home/jouell/code/jouell3/plant_detect2/notebooks/scrapping_flowers.ipynb).

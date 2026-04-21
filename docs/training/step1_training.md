@@ -63,7 +63,7 @@ Comme discuté dans l'introduction, j,ai utilisé la technique de trnasfert lear
 - Suivi d'un fine-tuning de l'ensemble du modèle (tête + queue) avec un taux d'apprentissage réduit pour permettre au modèle d'ajuster ses caractéristiques visuelles aux spécificités de mon dataset de plantes sans perdre les connaissances acquises pour 15 epochs.
 
 ![Training inital](../figures/training_initial.png)
-#### Figure 1 : Courbes d'apprentissage de la précision et de la perte pour les modèles entrainés. On observe que les modèles convergent vers une précision élevée et une perte faible au fil des epochs, avec quelques variations entre les modèles.
+##### Figure 1 : Courbes d'apprentissage de la précision et de la perte pour les modèles entrainés. On observe que les modèles convergent vers une précision élevée et une perte faible au fil des epochs, avec quelques variations entre les modèles.
 
 <br><br>
 

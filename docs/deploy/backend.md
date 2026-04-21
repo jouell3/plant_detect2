@@ -21,7 +21,7 @@ Finalement, une fois que l'image était sur Artifact Registry, j'ai utilisé Goo
 Voici une vue d'ensemble des différentes API qui sont disponoble via cette URL publique, et qui permettent de faire des prédictions de classification de plantes à partir d'images :
 
 ![FastAPI](../figures/fastAPI.png)
-#### Figure 1 : Vue d'ensemble des différentes routes de l'API de classification de plantes, qui sont disponibles via l'URL publique fournie par Cloud Run. Ces routes permettent de faire des prédictions de classification de plantes à partir d'images, en utilisant les différents modèles de classification de plantes que j'ai entrainé et déployé sur GCS. Les utilisateurs peuvent faire des requêtes à ces routes pour obtenir des prédictions précises et rapides pour leurs images de plantes, ce qui rend l'application accessible et utile pour un large public.
+##### Figure 1 : Vue d'ensemble des différentes routes de l'API de classification de plantes, qui sont disponibles via l'URL publique fournie par Cloud Run. Ces routes permettent de faire des prédictions de classification de plantes à partir d'images, en utilisant les différents modèles de classification de plantes que j'ai entrainé et déployé sur GCS. Les utilisateurs peuvent faire des requêtes à ces routes pour obtenir des prédictions précises et rapides pour leurs images de plantes, ce qui rend l'application accessible et utile pour un large public.
 
 J'ai mis en place 3 types d'API : 
 

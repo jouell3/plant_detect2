@@ -11,7 +11,7 @@ Comme discuter dans la section "Entrainement du modèle", j'ai entrainé 5 modè
 
 
 ![initial training des 5 modèles](../figures/initial_training_combined.png)
-Figure 1: Monitorage des différentes métriques d’entrainement pour les 5 modèles testés (EfficientNet-B3, ResNet-50, DenseNet-121, ConvNeXt-Tiny et MobileNetV3-Large) pour la classification d’images de plantes. Ces graphiques ont été générés avec Weights & Biases, qui m'a permis de suivre les différentes métriques d’entrainement en temps réel, et de comparer facilement les performances des différents modèles pour prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API.
+##### Figure 1: Monitorage des différentes métriques d’entrainement pour les 5 modèles testés (EfficientNet-B3, ResNet-50, DenseNet-121, ConvNeXt-Tiny et MobileNetV3-Large) pour la classification d’images de plantes. Ces graphiques ont été générés avec Weights & Biases, qui m'a permis de suivre les différentes métriques d’entrainement en temps réel, et de comparer facilement les performances des différents modèles pour prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API.
 
 <br><br><br>
 ## Résultats des modèles (validation)
@@ -35,4 +35,4 @@ Pour rappel, la **précision** est la proportion d'images correctement classées
 ![F1 scores des différents modèles sur toutes les classes](../figures/f1_heatmap_allmodels.png)
 ![Précision des différents modèles sur toutes les classes ](../figures/precision_heatmap_allmodels.png)
 
-#### Figure 2 : F1-score et présisions des différents modèles sur toutes les classes. On observe que le modèle ConvNeXt-Tiny a des performances globalement élevées, avec quelques variations entre les classes et catégories. Les autres modèles ont des performances plus variables, avec des points faibles sur certaines classes.
+##### Figure 2 : F1-score et présisions des différents modèles sur toutes les classes. On observe que le modèle ConvNeXt-Tiny a des performances globalement élevées, avec quelques variations entre les classes et catégories. Les autres modèles ont des performances plus variables, avec des points faibles sur certaines classes.

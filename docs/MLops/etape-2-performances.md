@@ -17,12 +17,12 @@ La première étape que j'ai voulu voir est les détails des scores de précisio
 <br>
 
 ![precision](../figures/precision_bycategory.png)
-#### Figure 1 : Precision des modèles par classe et parcatégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories.
+##### Figure 1 : Precision des modèles par classe et parcatégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories.
 
 <br>
 
 ![F1_score](../figures/F1score_bycategory.png)
-#### Figure 2 : F1-score des modèles par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories.
+##### Figure 2 : F1-score des modèles par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories.
 
 Globalement, on observe que les performances du modèle ConvNeXt-Tiny sont élevées pour la plupart des classes (>80% de précision pour toutes les classes). Il est intéressant de noter que certaines classes ont des performances légèrement plus faibles que d'autres, ce qui pourrait indiquer des problèmes spécifiques à ces classes. Cette baisse de performance pour certaines classes pourrait être due à plusieurs facteurs, tels que la qualité des images, la complexité de la classe (le fait que cette classe soit plus similaire à une autre), ou encore l'imbalance des classes dans le dataset (par example, il y avait beaucoup moins d'image de kiwi, ce qui pourrait expliquer le fait que les performances soient plus faibles). 
 
@@ -34,7 +34,7 @@ Pour s'assurer qu'il n'y a pas eu de surapprentissage durant la phase initiale d
 
 
 ![Kfold statifié](../figures/Kfold_strat_all.png)
-#### Figure 3 : Résultats de la K-fold stratified cross-validation.
+##### Figure 3 : Résultats de la K-fold stratified cross-validation.
 
 Il est possible de voir que les 5 K-fold d'entrainement du modèle ConvNeXt-Tiny ont obtenu des performances élevées, avec une précision moyenne de 94.6% et une faible variance entre les folds (écart-type de 0.004). Cela indique que le modèle est robuste et qu'il n'y a pas eu de surapprentissage durant la phase initiale d'entrainement. En utilisant K-fold stratified cross-validation, j'ai pu évaluer les performances du modèle sélectionné de manière plus fiable, en prenant en compte la variabilité des données et en fournissant une évaluation plus robuste de la performance du modèle sur des données non vues. 
 
@@ -44,7 +44,7 @@ Une approche complémentaire pour évaluer les performances du modèle de classi
 
 
 ![Kfold stratifié split 70-15-15](../figures/Kfold_strat_all_split70_15_15.png)
-#### Figure 4 : Résultats de la K-fold stratified cross-validation avec un split plus classique du dataset (70% train, 15% validation, 15% test).
+##### Figure 4 : Résultats de la K-fold stratified cross-validation avec un split plus classique du dataset (70% train, 15% validation, 15% test).
 
 ## Run Summary (detailed)
 

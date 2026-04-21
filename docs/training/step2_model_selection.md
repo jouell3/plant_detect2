@@ -17,13 +17,14 @@ Voici pour tous les modèles et toutes les catégories, la précision et le F1-s
 
 
 ![alt text](../figures/precision_heatmap_allmodels.png)
-#### Figure 1 : Précision des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. Il est aussi possible de voir que certaines classes sont plus difficiles à classifier que d'autres, comme par exemple la classe "avocat et kiwi" qui ont une précision plus faible que les autres classes.
+##### Figure 1 : Précision des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. Il est aussi possible de voir que certaines classes sont plus difficiles à classifier que d'autres, comme par exemple la classe "avocat et kiwi" qui ont une précision plus faible que les autres classes.
 
 <br><br>
 
 ![alt text](../figures/f1_heatmap_allmodels.png)
+##### Figure 2 : F1-score des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. 
 
-#### Figure 2 : F1-score des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. 
+##### Figure 2 : F1-score des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. 
 
 ## Conclusion
 

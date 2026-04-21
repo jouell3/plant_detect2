@@ -19,10 +19,10 @@ De la même façon qu'il est possible de monitorer les performances du modèle d
 <br><br><br>
 
 ![example de monitoring de la confience](../figures/monitoring.png)
-#### Figure 1 : Exemple de monitoring des performances du modèle en production, avec un suivi de la confiance pour chaque modèle.
+##### Figure 1 : Exemple de monitoring des performances du modèle en production, avec un suivi de la confiance pour chaque modèle.
 
 ![example de monitoring de la latence](../figures/monitoring_latency.png)
-#### Figure 2 : Exemple de monitoring de la latence des différentes prédictions faites par les modèles en production.
+##### Figure 2 : Exemple de monitoring de la latence des différentes prédictions faites par les modèles en production.
 
 ## Conclusion
 

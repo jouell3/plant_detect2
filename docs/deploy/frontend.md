@@ -27,26 +27,26 @@ Voici un example de chacune des pages de l'application Streamlit que j'ai dével
 <br>
 
 ![Frontend main page](../figures/frontend_main.png)
-Figure 1 : Page d'acceuil de l'application Streamlit pour la classification d'images de plantes. cette page détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes.
+##### Figure 1 : Page d'acceuil de l'application Streamlit pour la classification d'images de plantes. cette page détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes.
 
 
 <br><br>
 ![Page single prediction](../figures/page1.png)
 
 
-#### Figure 2 : Page de l'application Streamlit pour faire une prédiction de classification de plantes à partir d'une image téléchargée ou prise avec la caméra du téléphone. L'utilisateur peut faire une prédiction avec les modèles de classification de plantes, et afficher les résultats de manière claire et intuitive. Lorsque la plante est identifiée, on appercois une fiche descriptive de cette plante avec quelques conseils de culture et si la plante est commestible, il y a même des sugegstions de recettes. Finallement, pour les utilisateurs plus curieux, il est possible de visualiser les différentes classes de plantes que le modèle a identifié, ainsi que les différentes probabilités associées à chaque classe.
+##### Figure 2 : Page de l'application Streamlit pour faire une prédiction de classification de plantes à partir d'une image téléchargée ou prise avec la caméra du téléphone. L'utilisateur peut faire une prédiction avec les modèles de classification de plantes, et afficher les résultats de manière claire et intuitive. Lorsque la plante est identifiée, on appercois une fiche descriptive de cette plante avec quelques conseils de culture et si la plante est commestible, il y a même des sugegstions de recettes. Finallement, pour les utilisateurs plus curieux, il est possible de visualiser les différentes classes de plantes que le modèle a identifié, ainsi que les différentes probabilités associées à chaque classe.
 
 <br><br>
 
 ![Prediction en batch](../figures/page2.png)
 
-#### Figure 3 : Page de l'application Streamlit pour faire des prédictions de classification de plantes en batch à partir de plusieurs images téléchargées. L'utilisateur peut faire des prédictions avec les modèles de classification de plantes soit en envoyant les images une par une, soit en les envoyant toutes en même temps (elles seront traitées par batch de 20 par le backend pour permettre un affichage plus rapide des résultats. La page sera rafraichie à chaque fois que les résultats du prochain batch de 20 images sont disponibles).
+##### Figure 3 : Page de l'application Streamlit pour faire des prédictions de classification de plantes en batch à partir de plusieurs images téléchargées. L'utilisateur peut faire des prédictions avec les modèles de classification de plantes soit en envoyant les images une par une, soit en les envoyant toutes en même temps (elles seront traitées par batch de 20 par le backend pour permettre un affichage plus rapide des résultats. La page sera rafraichie à chaque fois que les résultats du prochain batch de 20 images sont disponibles).
 
 <br><br>
 
 ![Page monitoring](../figures/page_monitoring.png)
 
-#### Figure 4 : Page de l'application Streamlit pour le monitoring en temps réel des performances du modèle de classification de plantes en production. Cette page permet à l'utilisateur de suivre les différentes prédictions faites par le modèle, ainsi que les différentes métriques de performance (surtout au niveau de la précision et de la confiance) pour chaque classe, en affichant ces informations de manière claire et intuitive pour permettre à l'utilisateur de mieux comprendre les performances du modèle en production.
+##### Figure 4 : Page de l'application Streamlit pour le monitoring en temps réel des performances du modèle de classification de plantes en production. Cette page permet à l'utilisateur de suivre les différentes prédictions faites par le modèle, ainsi que les différentes métriques de performance (surtout au niveau de la précision et de la confiance) pour chaque classe, en affichant ces informations de manière claire et intuitive pour permettre à l'utilisateur de mieux comprendre les performances du modèle en production.
 
 
 ### Conclusion
