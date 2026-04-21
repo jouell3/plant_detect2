@@ -7,7 +7,7 @@ nav_order: 4
 
 # 🧩 Étape 4 — XGBoost multi‑classe sur embeddings
 
-Pour le filtrage autamatique, j'ai voulu mettre en place un arbre de désision basé sur les embeddings. La raison ici n'était pas de faire une classification des images à filtrer mais pour seulement déterminer si ces images étaient cohérentes avec les patterns appris par XGBoost des 8000 premières images filtrées manuellement, même si elles n'étaient pas classifiées dans la bonne classe. C'est pour cela que j'ai utilisé un classifieur multi-classe (35 classes) et pas un classifieur par classe (2 classes : dans la classe ou hors classe). Ensuite, si cette prédition avait un confience plus élevée que la limite qui avait été définie, alors les distances avec les 4 clusters calculés précédament étaient utilisées pour filtrer les images incohérentes.
+Pour le filtrage automatique, j'ai mis en place un classifieur XGBoost basé sur les embeddings. L'objectif n'était pas de classifier les images avec précision, mais de déterminer si une nouvelle image est cohérente avec les patterns visuels des 8 000 images filtrées manuellement — même si elle n'appartient pas exactement à la bonne classe. J'ai donc utilisé un classifieur multi-classe (35 classes) plutôt qu'un classifieur binaire par classe. Si la confiance de la prédiction dépassait un seuil défini, les distances aux 4 clusters calculés précédemment étaient alors utilisées pour filtrer les images incohérentes.
 
 Pourquoi XGBoost et cette approche ?
 

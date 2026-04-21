@@ -10,59 +10,62 @@ has_toc: false
 
 ## *Objectif du module*
 
-Afin de pouvoir utiliser le modèle de classification de plantes que j'ai entrainé dans les étapes précédentes, j'ai déployé sur une API pour permettre à tous et chacun de l'utiliser pour faire la classification d'images de plantes. Cette étape de déploiement est cruciale pour rendre le modèle accessible et utilisable par un large public, et pour permettre à d'autres personnes de bénéficier des résultats de mon travail.
+Afin de rendre accessible le modèle de classification de plantes entraîné dans les étapes précédentes, j'ai déployé une API permettant à tout utilisateur de soumettre une image et d'obtenir une prédiction. Cette étape est cruciale pour concrétiser le travail réalisé et le mettre à disposition d'un large public.
 
 ### **Architecture de l'application**
 
-L'architecture de mon application de classification de plantes est composée de deux parties principales : le backend, qui héberge l'API de classification de plantes, et le frontend, qui fournit une interface utilisateur pour interagir avec l'API. Le backend est développé en utilisant FastAPI, un micro-framework web en Python, qui permet de créer une API RESTful pour recevoir des images de plantes, les traiter et retourner les prédictions des modèles. Le frontend est développé en utilisant Streamlit, une bibliothèque Python qui permet de créer des applications web interactives de manière simple et rapide, et qui offre une intégration facile avec les bibliothèques de data science et de machine learning en Python. Le frontend permet aux utilisateurs de télécharger des images de plantes, de faire des prédictions avec les modèles de classification de plantes, et d'afficher les résultats de manière claire et intuitive. L'architecture de l'application est conçue pour être simple et efficace, en permettant une communication fluide entre le frontend et le backend, et en offrant une expérience utilisateur agréable et intuitive pour faire la classification d'images de plantes.
+```
+┌──────────────────┐   image (HTTP POST)   ┌─────────────────────────────────┐
+│    Frontend      │ ───────────────────►  │  Backend — Cloud Run            │
+│   Streamlit      │ ◄───────────────────  │  FastAPI + 5 modèles timm       │
+└──────────────────┘    JSON predictions   └──────────────┬──────────────────┘
+                                                          │                   
+                              téléchargement              │      logs métriques
+                           artefacts (cache 3h)           │   (confiance, latence)
+                                          ▼               ▼
+                             ┌────────────────────────────────────┐
+                             │     Weights & Biases               │
+                             │  Registry (poids) + Dashboard      │
+                             │  (monitoring production)           │
+                             └────────────────────────────────────┘
+```
+<br>
 
-Pour permettre un deploiement efficace de mon application, j'ai organisé mon projet de manière à isoler le code du backend et du frontend dans des répertoires dédiés. Le répertoire "backend" contient tout le code nécessaire pour héberger l'API de classification de plantes, y compris les scripts pour charger les modèles, traiter les images et retourner les prédictions. Le répertoire "frontend" contient tout le code nécessaire pour créer l'interface utilisateur avec Streamlit, y compris les scripts pour afficher les différentes pages de l'application et pour interagir avec l'API du backend. Cette organisation permet de mieux structurer le projet et de faciliter le développement et le déploiement de l'application, en permettant une séparation claire entre les différentes parties de l'application et en facilitant la maintenance et les mises à jour futures.
+> **API backend :** [https://plantdetectapi-2a5a6b4c0e-uc.a.run.app](https://plantdetectapi-2a5a6b4c0e-uc.a.run.app)
+> **Application frontend :** [https://plantpredict.streamlit.app](https://plantpredict.streamlit.app)
+> **Tableau de bord wandb :** [wandb.ai/certification](https://wandb.ai/home)
+
+L'architecture de l'application est composée de deux parties principales : le **backend**, qui héberge l'API de classification, et le **frontend**, qui fournit une interface utilisateur pour interagir avec l'API.
+
+Le backend est développé avec **FastAPI**, un micro-framework Python permettant de créer une API RESTful pour recevoir des images, les traiter et retourner les prédictions des modèles.
+
+Le frontend est développé avec **Streamlit**, une bibliothèque Python permettant de créer des applications web interactives et bien intégrées avec les outils de data science. Il permet de téléverser des images, d'obtenir des prédictions et d'afficher les résultats de manière claire et intuitive.
+
+Pour permettre un déploiement efficace, le projet est organisé de manière à isoler clairement le code du backend et du frontend dans des répertoires dédiés. Le répertoire `backend/` contient l'ensemble du code de l'API, y compris les scripts de chargement des modèles, de traitement des images et de retour des prédictions. Le répertoire `frontend/` contient les scripts Streamlit pour les différentes pages de l'application et la logique d'interaction avec l'API. Cette séparation facilite le développement, le déploiement et la maintenance indépendante des deux couches.
 
 Voici la structure de mon projet pour le déploiement de l'application de classification de plantes :
 
 ```
-├── backend
-│   ├── app
-│   │   ├── api
-│   │   ├── core
-│   │   ├── models_flowers_fruits
-│   │   ├── new_model
-│   │   ├── __pycache__
-│   │   ├── src
-│   │   └── templates
-│   ├── __pycache__
-│   ├── tests
-│   │   └── __pycache__
-├── data
-│   ├── dataset
-├── docker
-├── docs
-│   ├── collecte
-│   ├── deploy
-│   ├── figures
-│   ├── frontend
-│   ├── MLops
-│   ├── superpowers
-│   │   ├── plans
-│   │   └── specs
-│   └── training
-├── frontend
-│   ├── pages
-│   │   └── __pycache__
-│   └── __pycache__
-├── models
-│   └── wandb
-│       ├── convnext_tiny_best
-│       ├── efficientnet_b3_best
-│       ├── efficientnet_b4_best
-│       ├── label_encoder
-│       ├── mobilenetv3_large_best
-│       └── resnet50_best
-├── notebooks
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   │   └── main.py          # FastAPI — endpoints de prédiction
+│   │   └── src/
+│   │       └── herbs_detection/ # Package ML (timm_predictor, wandb_loader, model_registry)
+│   └── tests/                   # Tests unitaires (pytest)
+├── docker/
+│   └── backend.Dockerfile
+├── docs/                        # Rapport de certification (MkDocs)
+├── frontend/
+│   ├── main.py                  # Page d'accueil Streamlit
+│   └── pages/                   # Pages de l'application
+├── models/
+│   └── wandb/                   # Cache local des artefacts wandb
+├── notebooks/                   # Notebooks Colab (entraînement, évaluation, filtrage)
 ```
 
 <br>
 
-Les autres fichiers comme requirements.txt (tous les modules requis poru el bon fonctionnement de mon environment), Dockerfile (pour permettre de construire l'image Docker), pyproject.py (pour le module herb_detection, qui contient le code source pour les différentes fonctions de mon backend), poeptry.lock etc. sont à la racine du projet pour faciliter le développement et le déploiement de l'application de classification de plantes.
+Les fichiers de configuration (`requirements.txt`, `Dockerfile`, `pyproject.toml`) sont placés à la racine ou dans les répertoires correspondants pour faciliter le développement et le déploiement de l'application.
 
 

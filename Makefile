@@ -12,18 +12,17 @@ serve: ## Run the API locally with the correct PYTHONPATH
 	PYTHONPATH=backend/app/src uvicorn backend.app.api.main:api --reload --host 0.0.0.0 --port 8080
 
 test:
-	curl -X POST http://localhost:8080/predict_herb \
+	curl -X POST http://localhost:8080/predict \
 	  -F "file=@data/raw/all_images/dill_0.jpg"
 
 build: ## Build Docker image locally
 	docker build -f docker/backend.Dockerfile -t plant-detect2-backend .
 
-run: build ## Build and run container locally (mounts GCP ADC credentials)
+run: build ## Build and run container locally (passes WandB credentials via env)
 	docker run --rm -p 8080:8080 \
-	  -v ~/.config/gcloud/application_default_credentials.json:/tmp/adc.json:ro \
-	  -e GOOGLE_APPLICATION_CREDENTIALS=/tmp/adc.json \
-	  -e GCS_BUCKET_NAME=plant-detect-models \
-	  -e GCS_PROJECT=bootcamparomatic \
+	  -e WANDB_API_KEY=$(WANDB_API_KEY) \
+	  -e WANDB_PROJECT=$(WANDB_PROJECT) \
+	  -e WANDB_ENTITY=$(WANDB_ENTITY) \
 	  plant-detect2-backend
 
 build_local: ## Build image locally (Linux/amd64 platform)

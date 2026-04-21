@@ -7,11 +7,11 @@ nav_order: 2
 
 ## Objectif de cette étape
 
-Cette étape de sélection du modèle est cruciale pour déterminer quel modèle de classification de plantes sera utilisé pour la prochaine étape de déploiement sur une API. Après avoir entrainé différents modèles de classification de plantes à partir des images collectées, il est important d'évaluer leurs performances et de sélectionner le modèle qui offre les meilleures performances globales pour la classification d’images de plantes. Pour ce faire, j'ai monitoré différentes métriques d’entrainement, telles que la précision, le rappel et le F1-score, pour évaluer les performances de mes modèles et prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API. L’objectif de cette étape est d’obtenir un modèle performant et robuste pour la classification d’images de plantes, qui pourra être utilisé par tous et chacun pour identifier les différentes classes de plantes à partir de leurs images.
+L’objectif de cette étape est de sélectionner le modèle offrant les meilleures performances généralisées, sur la base de la précision, du rappel et du F1-score mesurés sur le jeu de validation (20 % des données initiales).
 
 ### **Précision et F1-score des modèles de classification de plantes**
 
-Pour permettre de bien comparer les performances de mes modèles de classification de plantes, j'ai monitoré différentes métriques d’entrainement, telles que la précision et le F1-score. Cette étape ce fait à partir du jeu de données qui a été séparé pour la validation (20% des données initiales). La **précision** est une métrique qui mesure la proportion de prédictions correctes parmi les prédictions positives, tandis que le **F1-score** est une métrique qui combine la précision et le rappel pour fournir une mesure globale de la performance du modèle. En évaluant ces métriques pour chaque modèle, j'ai pu déterminer lequel offre les meilleures performances globales pour la classification d’images de plantes.
+Pour permettre de bien comparer les performances de mes modèles de classification de plantes, j'ai monitoré différentes métriques d’entrainement, telles que la précision et le F1-score. Cette évaluation est réalisée sur le jeu de validation (20 % des données initiales). La **précision** mesure la proportion de prédictions correctes parmi les prédictions positives, tandis que le **F1-score** combine précision et rappel pour fournir une mesure globale des performances. L’évaluation de ces deux métriques pour chaque modèle permet de déterminer lequel offre les meilleures performances globales.
 
 Voici pour tous les modèles et toutes les catégories, la précision et le F1-score obtenus sur le jeu de validation:
 
@@ -24,13 +24,22 @@ Voici pour tous les modèles et toutes les catégories, la précision et le F1-s
 ![alt text](../figures/f1_heatmap_allmodels.png)
 ##### Figure 2 : F1-score des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. 
 
-##### Figure 2 : F1-score des modèles de classification de plantes par classe et par catégorie. On observe que les modèles ont des performances globalement élevées, avec quelques variations entre les classes et catégories. 
+### **Test de McNemar — validation statistique du classement**
+
+Les heatmaps montrent que ConvNeXt-Tiny (95.4 %) devance EfficientNet-B3 (92.9 %) d’environ 2.5 points. Mais cette différence est-elle réellement significative, ou pourrait-elle être un artefact du split de validation ?
+
+Le **test de McNemar** répond à cette question. C’est un test statistique adapté aux comparaisons de classifieurs évalués sur les **mêmes échantillons** (données appariées). Il analyse le tableau de contingence des désaccords entre deux modèles — uniquement les cas où l’un se trompe et pas l’autre — et teste l’hypothèse nulle H₀ : *les deux modèles font le même nombre d’erreurs*.
+
+| Comparaison | b (A✓ B✗) | c (A✗ B✓) | χ² | p-value | Conclusion |
+|---|---:|---:|---:|---:|---|
+| ConvNeXt-Tiny vs EfficientNet-B3 | 468 | 171 | 137.11 | < 0.0001 | **ConvNeXt-Tiny significativement meilleur** |
+| EfficientNet-B3 vs EfficientNet-B4 | 335 | 324 | 0.15 | 0.697 | Différence non significative |
+
+La première comparaison est sans ambiguïté : ConvNeXt-Tiny corrige 468 erreurs d’EfficientNet-B3 pour seulement 171 dans l’autre sens — un écart très improbable sous H₀ (p < 0.0001). En revanche, EfficientNet-B3 et B4 sont statistiquement interchangeables malgré leurs scores légèrement différents.
 
 ### **Conclusion**
 
-Il est intéressant de voir que pour certaines classes et que pour certains modèles, la précision et le F1-score sont plus faibles que pour d'autres classes et d'autres modèles. Cela peut être dû à plusieurs facteurs, tels que la qualité des images, la complexité de la classe ou encore l'imbalance des classes dans le dataset. Cependant, dans l'ensemble, les modèles ont obtenu des performances élevées pour la classification d’images de plantes, ce qui est un bon indicateur de leur capacité à généraliser à de nouvelles données. En comparant les différentes métriques d’entrainement pour chaque modèle, j'ai pu déterminer lequel offre les meilleures performances globales pour la classification d’images de plantes.
-
-Comme le modèle ConvNeXt-Tiny a obtenu les meilleures performances globales en termes de précision et de F1-score, j'ai décidé de pousser un peu plus les tests sur ce modèle. Des tests classiques pour évaluer ce modèles ont été fait et seront plus détaillés dans la section suivante, qui est dédiée à l'évaluation du modèle de classification de plantes.
+Ces résultats confirment le choix de ConvNeXt-Tiny comme modèle de production. L’avance sur EfficientNet-B3 n’est pas un artefact — elle est robuste et statistiquement validée. La section suivante détaille les tests de performance approfondis réalisés sur ce modèle retenu.
 
 
 
