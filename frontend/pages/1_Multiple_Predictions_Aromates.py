@@ -4,7 +4,7 @@ import json
 import os
 import threading
 import time
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import requests
@@ -191,6 +191,40 @@ def _consensus_line(rows: list[dict], low_confidence: bool = False, disagreement
     )
 
 
+_MODEL_WEIGHTS = {
+    "convnext_tiny":     0.954,
+    "efficientnet_b3":   0.929,
+    "efficientnet_b4":   0.928,
+    "mobilenetv3_large": 0.879,
+    "resnet50":          0.862,
+}
+
+
+def _weighted_vote_rows(rows: list[dict]) -> tuple[str, float]:
+    """Weighted majority vote on top-1 per model. rows = [{model, species, confidence}]."""
+    scores: dict[str, float] = defaultdict(float)
+    for r in rows:
+        w = _MODEL_WEIGHTS.get(r["model"], 1.0)
+        scores[r["species"]] += w * r["confidence"]
+    top = sorted(scores.items(), key=lambda x: -x[1])
+    total = sum(s for _, s in top)
+    return top[0][0], top[0][1] / total if total else 0.0
+
+
+def _soft_consensus_line(top_species: str, ensemble_conf: float, disagreement: bool = False, low_confidence: bool = False) -> str:
+    color = confidence_color(ensemble_conf)
+    label = _display_species_name(top_species)
+    conf_icon = "⚠️ " if low_confidence else ""
+    split_icon = " 🔀" if disagreement else ""
+    return (
+        f"<div style='text-align:center; width:100%; margin-top:6px; margin-bottom:2px; line-height:1.4'>"
+        f"<div style='font-size:clamp(0.85rem, 1.6vw, 1.3rem); font-weight:bold'>{conf_icon}{label}</div>"
+        f"<div style='font-size:clamp(0.6rem, 1.0vw, 0.85rem); color:#757575'>({'weighted ensemble' if lang == 'en' else 'ensemble pondéré'}){split_icon}</div>"
+        f"<div style='font-size:clamp(0.7rem, 1.2vw, 1.0rem); color:{color}; font-weight:bold'>{ensemble_conf:.1%} {'confidence' if lang == 'en' else 'certitude'}</div>"
+        f"</div>"
+    )
+
+
 def _render_batch_grid(files: list[dict], batch_results: dict, min_confidence: float) -> None:
     for row_idx in range(0, len(files), GRID_COLS):
         cols = st.columns(GRID_COLS)
@@ -198,12 +232,12 @@ def _render_batch_grid(files: list[dict], batch_results: dict, min_confidence: f
             with cols[col_idx]:
                 data = batch_results[file["name"]]
                 rows = [{"model": k, "species": v["species"], "confidence": v["confidence"]} for k, v in data.items()]
+                consensus_species, ensemble_conf = _weighted_vote_rows(rows)
                 disagreement = len(set(r["species"] for r in rows)) > 1
-                consensus_species = Counter(r["species"] for r in rows).most_common(1)[0][0]
-                low_confidence = any(r["confidence"] < min_confidence for r in rows if r["species"] == consensus_species)
+                low_confidence = ensemble_conf < min_confidence
                 st.image(file["bytes"], width="stretch")
                 st.caption(file["name"])
-                st.markdown(_consensus_line(rows, low_confidence=low_confidence, disagreement=disagreement), unsafe_allow_html=True)
+                st.markdown(_soft_consensus_line(consensus_species, ensemble_conf, disagreement=disagreement, low_confidence=low_confidence), unsafe_allow_html=True)
                 with st.expander("View details" if lang == "en" else "Voir les details"):
                     st.markdown(_predictions_table(rows, consensus_species=consensus_species), unsafe_allow_html=True)
 
@@ -483,12 +517,12 @@ if predict_mode == MODE_BATCH:
 
     def _render_aromate_item(file: dict, data: dict) -> None:
         rows = [{"model": k, "species": v["species"], "confidence": v["confidence"]} for k, v in data.items()]
+        consensus_species, ensemble_conf = _weighted_vote_rows(rows)
         disagreement = len(set(r["species"] for r in rows)) > 1
-        consensus_species = Counter(r["species"] for r in rows).most_common(1)[0][0]
-        low_confidence = any(r["confidence"] < min_confidence for r in rows if r["species"] == consensus_species)
+        low_confidence = ensemble_conf < min_confidence
         st.image(file["bytes"], width="stretch")
         st.caption(file["name"])
-        st.markdown(_consensus_line(rows, low_confidence=low_confidence, disagreement=disagreement), unsafe_allow_html=True)
+        st.markdown(_soft_consensus_line(consensus_species, ensemble_conf, disagreement=disagreement, low_confidence=low_confidence), unsafe_allow_html=True)
         with st.expander("View details" if lang == "en" else "Voir les details"):
             st.markdown(_predictions_table(rows, consensus_species=consensus_species), unsafe_allow_html=True)
 
@@ -553,13 +587,13 @@ else:
                     {"model": model_key, "species": preds[0]["species"], "confidence": preds[0]["confidence"]}
                     for model_key, preds in data.items() if preds
                 ]
-                low_confidence = any(r["confidence"] < min_confidence for r in top1_rows)
+                consensus_species, ensemble_conf = _weighted_vote_rows(top1_rows)
                 disagreement = len(set(r["species"] for r in top1_rows)) > 1
-                consensus_species = Counter(r["species"] for r in top1_rows).most_common(1)[0][0] if top1_rows else None
+                low_confidence = ensemble_conf < min_confidence
                 st.image(file["bytes"], width="stretch")
                 st.caption(file["name"])
                 if top1_rows:
-                    st.markdown(_consensus_line(top1_rows, low_confidence=low_confidence, disagreement=disagreement), unsafe_allow_html=True)
+                    st.markdown(_soft_consensus_line(consensus_species, ensemble_conf, disagreement=disagreement, low_confidence=low_confidence), unsafe_allow_html=True)
                 with st.expander("View details" if lang == "en" else "Voir les details"):
                     for model_key, top3 in data.items():
                         st.markdown(f"**{model_key.upper()}**", unsafe_allow_html=True)

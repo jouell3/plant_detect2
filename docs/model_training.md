@@ -8,13 +8,13 @@ has_toc: false
 
 
 
-# Entrainement des modèles de classification de plantes
+# Entraînement des modèles de classification de plantes
 
 <br>
 
 ### *Objectif du module*
 
-Après avoir collecté toutes les images de plantes aromatiques, fleurs et arbres fruitiers, j'ai entrainé des modèles de type **EfficientNet-B3/B4, RestNet50, MobileNetV3-Large et ConvNeXt-Tiny** que j'ai adapté aux classes de plantes sélectionnées. J'ai monitoré au cours de cet entrainement les différentes métriques de mes modèles pour pouvoir prendre la décision de quel modèle sera utilisé pour la prochaine étape. Cette prochaine étape consiste justement a déployé ce modèle sur une API pour permettre à tous et chacun de l'utiliser pour faire la classification d'images de plantes.
+Après avoir collecté toutes les images de plantes aromatiques, fleurs et arbres fruitiers, j'ai entraîné des modèles de type **EfficientNet-B3/B4, ResNet-50, MobileNetV3-Large et ConvNeXt-Tiny** que j'ai adapté aux classes de plantes sélectionnées. J'ai monitoré au cours de cet entrainement les différentes métriques de mes modèles pour pouvoir prendre la décision de quel modèle sera utilisé pour la prochaine étape. Cette prochaine étape consiste justement a déployé ce modèle sur une API pour permettre à tous et chacun de l'utiliser pour faire la classification d'images de plantes.
 
 <br>
 
@@ -30,14 +30,14 @@ L’entrainement du modèle de classification de plantes est une étape cruciale
 
 <br>
 
-C'est 5 modèles sont des modèles de convolution efficace et performant qui sont courrament utiliser pour la classification d’images. Cependant, ils ont tous leurs forces et faiblesse et il est très difficile voir impossible à prédire lequel performera le mieux pour cette tâche de classification de plantes. Même s'ils ont été pré-entrainés, il fallait que je les adapte aux classes de plantes sélectionnées pour déterminer lequel performera le mieux. 
+Ces 5 modèles sont des architectures convolutionnelles efficaces et performantes, couramment utilisées pour la classification d’images. Ils ont cependant tous leurs forces et faiblesses, et il est difficile, voire impossible, de prédire a priori lequel performera le mieux sur cette tâche de classification de plantes. Même s’ils ont été pré-entraînés, il était nécessaire de les adapter aux classes de plantes sélectionnées pour déterminer lequel offre les meilleures performances. 
 
 <br>
 
-Comme ces modèles ont déjà été entrainé sur ImageNet, j'ai utilisé la technique de fine-tuning pour adapter ces modèles à mon dataset de plantes. Ces modèles ont 2 parties: la tête et la queue. Comme ces modèles ont déjà été entrainés sur des milliers d'images et de classes différentes (>1000 classes), il ont déjà des matrices de poids et biais qui permet de partir de leur configuration initiale (ce qu'on appelle habituellement la tête et qui permet de générer les embeddings). On doit ensuite adapter ces modéles aux nombre de classes en sortie (qui se termine par une couche "softmax" qui a autant de sorties que de classes et cette partie est communément appelée la queue). Ce processus d'adaptation des modèles pré-entrianés queue est ce qu'on appelle le transfer learning. 
+Comme ces modèles ont déjà été entraînés sur ImageNet, j'ai utilisé la technique du transfer learning pour les adapter à mon dataset de plantes. Ces architectures se composent de deux parties : le **backbone** (extracteur de caractéristiques, dont les poids sont pré-entraînés sur plus de 1 000 classes ImageNet et permettent de générer des embeddings visuels) et la **tête de classification** (couche linéaire finale, adaptée au nombre de classes cibles et terminée par une activation softmax). Le processus d'adaptation consiste à remplacer la tête de classification d'origine par une nouvelle couche correspondant aux 58 classes du dataset, puis à affiner les poids du modèle via le fine-tuning. 
 <br>
 
-Tout au long du processus d'entrainement, j'ai monitoré les différentes métriques d’entrainement, telles que la précision, le rappel et le F1-score, pour évaluer les performances des modèles et prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API. L’objectif de cette étape est d’obtenir un modèle performant et robuste pour la classification d’images de plantes, qui pourra être utilisé par tous et chacun pour identifier les différentes classes de plantes à partir de leurs images.
+Tout au long du processus d'entrainement, j'ai monitoré les différentes métriques d’entrainement, telles que la précision, le rappel et le F1-score, pour évaluer les performances des modèles et prendre la décision de quel modèle sera utilisé pour la prochaine étape de déploiement sur une API. L’objectif de cette étape est d’obtenir un modèle performant et robuste pour la classification d’images de plantes, qui pourra être mis à disposition de tout utilisateur souhaitant identifier une espèce à partir d’une image.
 
 ### **Architecture des modèles**
 

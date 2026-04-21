@@ -3,7 +3,7 @@
 API de reconnaissance de plantes (herbes aromatiques, fleurs, arbres fruitiers) basée sur 5 modèles de deep learning entraînés via la bibliothèque [`timm`](https://github.com/huggingface/pytorch-image-models) et servie par FastAPI sur Google Cloud Run. Les poids des modèles sont versionnés dans le registre [Weights & Biases](https://wandb.ai) et téléchargés à la demande au démarrage du conteneur.
 
 > **Évolution depuis le projet de groupe initial.**
-> La version d'origine reconnaissait 23 herbes aromatiques à partir d'un unique modèle ResNet18 stocké sur GCS. Cette version, réalisée dans le cadre d'une certification en data science / IA, étend le projet à **59 classes** (23 aromates + 19 fleurs + 16 arbres fruitiers) sur un dataset de **57 000+ images** collectées via l'API iNaturalist, avec **5 architectures benchmarkées** pour justifier le modèle retenu et une **migration complète GCS → wandb** pour le registre de modèles.
+> La version d'origine reconnaissait 23 herbes aromatiques à partir d'un unique modèle ResNet18 stocké sur GCS. Cette version, réalisée dans le cadre d'une certification en data science / IA, étend le projet à **58 classes** (23 aromates + 19 fleurs + 16 arbres fruitiers) sur un dataset de **57 000+ images** collectées via l'API iNaturalist, avec **5 architectures benchmarkées** pour justifier le modèle retenu et une **migration complète GCS → wandb** pour le registre de modèles.
 
 ---
 
@@ -33,7 +33,7 @@ Frontend Streamlit  ──►  Backend FastAPI (Cloud Run)
 | `mobilenetv3_large` | MobileNetV3-Large | 224 | Option low-latency |
 | `resnet50` | ResNet-50 | 224 | Baseline classique |
 
-Tous les modèles partagent le même encodeur de classes (59 classes, ordre alphabétique), généré par `torchvision.datasets.ImageFolder` lors de l'entraînement et sauvegardé comme `label_encoder.pkl` dans l'artefact wandb (ou `classes.txt` en fallback).
+Tous les modèles partagent le même encodeur de classes (58 classes, ordre alphabétique), généré par `torchvision.datasets.ImageFolder` lors de l'entraînement et sauvegardé comme `label_encoder.pkl` dans l'artefact wandb (ou `classes.txt` en fallback).
 
 ---
 
@@ -91,12 +91,16 @@ frontend/
   pages/
     0_Prediction_aromate.py     # Prédiction simple (une image)
     1_Multiple_Predictions_Aromates.py  # Prédiction par lot
-    4_Image_Labelling.py        # Sélection manuelle pour datasets
+    2_Image_Labelling.py        # Sélection manuelle pour datasets
+    3_Monitoring.py             # Tableau de bord de monitoring (latence, confiance)
 
 notebooks/
-  benchmark_models.ipynb        # Benchmark des 5 architectures + KFold + diagnostics
-  convnext_tiny_full_pipeline.ipynb  # Pipeline complet du modèle retenu (70/15/15)
-  confidence_exploration.ipynb  # Analyse statistique des scores de confiance (Colab-ready)
+  benchmark_models_colab.ipynb           # Benchmark des 5 architectures + KFold + diagnostics
+  convnext_tiny_full_pipeline_colab.ipynb  # Pipeline complet du modèle retenu (70/15/15)
+  confidence_exploration_colab.ipynb     # Analyse statistique des scores de confiance
+  efficient_B3_pytorch_colab_2.ipynb     # Expérimentations EfficientNet-B3
+  02_clustering_xgboost.ipynb            # Pipeline de filtrage automatique (embeddings + XGBoost)
+  evaluation_models.ipynb                # Évaluation comparative des modèles (test set final)
 
 docker/
   backend.Dockerfile
@@ -110,8 +114,9 @@ Deux notebooks couvrent le cycle d'entraînement, conçus pour tourner sur Googl
 
 | Notebook | Usage |
 |---|---|
-| `notebooks/benchmark_models.ipynb` | Entraîne et compare les 5 architectures, valide la stabilité par StratifiedKFold, produit les heatmaps F1 / précision et le test de McNemar pour la comparaison statistique |
-| `notebooks/convnext_tiny_full_pipeline.ipynb` | Pipeline complet du modèle gagnant sur split 70/15/15 (test set strictement réservé à l'évaluation finale) |
+| `notebooks/benchmark_models_colab.ipynb` | Entraîne et compare les 5 architectures, valide la stabilité par StratifiedKFold, produit les heatmaps F1 / précision et le test de McNemar pour la comparaison statistique |
+| `notebooks/convnext_tiny_full_pipeline_colab.ipynb` | Pipeline complet du modèle gagnant sur split 70/15/15 (test set strictement réservé à l'évaluation finale) |
+| `notebooks/evaluation_models.ipynb` | Évaluation finale des modèles sur le test set — métriques, matrices de confusion, analyse par classe |
 
 Chaque exécution logue ses hyperparamètres, métriques et courbes dans wandb. Les meilleurs checkpoints sont uploadés comme artefacts nommés `<model_key>_best` (par exemple `convnext_tiny_best`, `efficientnet_b3_best`, etc.) — noms utilisés tels quels par `model_registry.py`.
 
@@ -144,6 +149,8 @@ Monte `~/.config/gcloud/application_default_credentials.json` dans le conteneur 
 |---|---|---|
 | GET | `/` | Santé + liste des modèles activés |
 | GET | `/models` | Détail de chaque modèle (key, timm_name, img_size) |
+| GET | `/metrics` | Snapshot de santé en temps réel : KPIs, 20 dernières prédictions, distribution par classe, stats par modèle |
+| GET | `/metrics/predictions` | Historique complet des prédictions depuis le démarrage de l'instance (liste plate pour export CSV) |
 | POST | `/predict` | Prédiction sur une image, top-k par modèle (paramètre `models=` pour filtrer) |
 | POST | `/predict-batch` | Prédiction par lot, top-1 par image par modèle |
 | POST | `/explore` | Top-K par modèle avec rang — destiné à la comparaison côte-à-côte dans le frontend |

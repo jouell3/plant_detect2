@@ -2,6 +2,7 @@ import io
 import json
 import os
 import random
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
@@ -28,6 +29,26 @@ _FICHES_PATH = Path(__file__).parent.parent / "fiches.json"
 FICHES: dict = json.loads(_FICHES_PATH.read_text(encoding="utf-8")) if _FICHES_PATH.exists() else {}
 _SUGGESTIONS_PATH = Path(__file__).parent.parent / "suggestions.json"
 SUGGESTIONS: dict = json.loads(_SUGGESTIONS_PATH.read_text(encoding="utf-8")) if _SUGGESTIONS_PATH.exists() else {}
+
+_MODEL_WEIGHTS = {
+    "convnext_tiny":     0.954,
+    "efficientnet_b3":   0.929,
+    "efficientnet_b4":   0.928,
+    "mobilenetv3_large": 0.879,
+    "resnet50":          0.862,
+}
+
+
+def _weighted_vote(predictions: list[dict]) -> tuple[str, float]:
+    scores: dict[str, float] = defaultdict(float)
+    for item in predictions:
+        w = _MODEL_WEIGHTS.get(item["model"], 1.0)
+        top1 = item["top3"][0]
+        scores[top1["class"]] += w * top1["confidence"]
+    top = sorted(scores.items(), key=lambda x: -x[1])
+    total = sum(s for _, s in top)
+    return top[0][0], top[0][1] / total if total else 0.0
+
 
 st.set_page_config(page_title="Plant Predictor", layout="wide")
 inject_global_css()
@@ -222,28 +243,15 @@ if st.button("🔍 Identify", type="primary", width='content'):
             logger.error("API HTTP error | {}", e)
             st.stop()
 
-    data = response.json() 
-    models_used = list({item["model"] for item in data["predictions"]})
-    first_model = models_used[0]
-    top_species = []
-    mean_confidence = []
-    good_models = []
-    for i, key in enumerate(models_used):
-        top_species.append(data["predictions"][i]["top3"][0]["class"])
-    top_species = max(set(top_species), key=top_species.count)  # Most common top species among models
-    other_species = [s for s in top_species if s != top_species]
-    for i, key in enumerate(models_used):
-        if data["predictions"][i]["top3"][0]["class"] == top_species:
-            mean_confidence.append(data["predictions"][i]["top3"][0]["confidence"])
-            good_models.append(key)
-    mean_confidence = sum(mean_confidence) / len(mean_confidence) if mean_confidence else 0.0
+    data = response.json()
+    models_used = [item["model"] for item in data["predictions"]]
+    top_species, mean_confidence = _weighted_vote(data["predictions"])
 
     st.session_state.last_prediction = {
         "data": data,
         "models_used": models_used,
         "top_species": top_species,
         "mean_confidence": mean_confidence,
-        "good_models": good_models,
         "uploaded_name": uploaded_file.name,
         "uploaded_bytes": file_bytes,
     }
@@ -273,19 +281,18 @@ if prediction:
     models_used = prediction["models_used"]
     top_species = prediction["top_species"]
     mean_confidence = prediction["mean_confidence"]
-    good_models = prediction["good_models"]
-    herb_found = [data["predictions"][i]["top3"][0]["class"] for i in range(len(models_used))]
+    herb_found = [item["top3"][0]["class"] for item in data["predictions"]]
     unique_preds = len(set(herb_found))
     fiche = FICHES.get(_normalize_species_key(top_species))
 
     # ── Hero result card ──────────────────────────────────────────────────
     color = confidence_color(mean_confidence)
     if unique_preds == 1:
-        agreement_badge = f"<span style='background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>✅ {'All models agree' if lang == 'en' else 'Tous les modèles concordent'}</span>"
+        agreement_badge = f"<span style='background:#e8f5e9;color:#2e7d32;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>✅ {'Weighted ensemble · all models agree' if lang == 'en' else 'Ensemble pondéré · tous concordent'}</span>"
     elif unique_preds == 2:
-        agreement_badge = f"<span style='background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>⚠️ {'Most models agree' if lang == 'en' else 'La majorité concorde'}</span>"
+        agreement_badge = f"<span style='background:#fff3e0;color:#e65100;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>⚡ {'Weighted ensemble · most models agree' if lang == 'en' else 'Ensemble pondéré · majorité concorde'}</span>"
     else:
-        agreement_badge = f"<span style='background:#fce4ec;color:#c62828;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>❌ {'Models disagree' if lang == 'en' else 'Les modèles divergent'}</span>"
+        agreement_badge = f"<span style='background:#fce4ec;color:#c62828;padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:600'>⚡ {'Weighted ensemble · models diverge' if lang == 'en' else 'Ensemble pondéré · modèles divergent'}</span>"
 
     display_name = _display_species_name(top_species)
     hero_html = f"""

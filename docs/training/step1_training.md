@@ -12,13 +12,13 @@ nav_order: 1
 
 Dans cette première étape, le but était d'entrainer différents modèles de classification de plantes à partir des images collectées. Pour ce faire, je suis parti de modèles pré-entrainés sur ImageNet, tels que EfficientNet-B3/B4, ResNet-50, MobileNetV3-Large et ConvNeXt-Tiny, que j'ai adapté à mon dataset de plantes. L'entrainement c'est fait en deux étapes:
 
-1) J'ai d'abord entrainé la queue de ces modèles (la partie de classification) en gardant la tête (la partie de convolution) gelée. Cela permet de profiter des caractéristiques visuelles déjà apprises par ces modèles sur ImageNet, tout en adaptant la partie de classification à mon dataset de plantes.
+1) J'ai d'abord entraîné la tête de classification uniquement, en gardant le backbone gelé. Cela permet de profiter des caractéristiques visuelles déjà apprises sur ImageNet, tout en adaptant la couche de sortie au dataset de plantes.
 
-2) Ensuite, j'ai effectué un fine-tuning de l'ensemble du modèle (tête + queue) pour permettre au modèle d'ajuster ses caractéristiques visuelles aux spécificités de mon dataset de plantes.
+2) Ensuite, j'ai effectué un fine-tuning de l'ensemble du modèle (backbone + tête) pour permettre au modèle d'ajuster ses caractéristiques visuelles aux spécificités du dataset de plantes.
 
 J'ai utilisé la bibliothèque PyTorch pour implémenter et entrainer mes modèles, en utilisant des optimisateurs tels que Adam et des fonctions de perte adaptées à la classification multi-classe (comme CrossEntropyLoss). J'ai monitoré les différentes métriques d’entrainement, telles que la précision et la perte pour évaluer les performances des modèles. Les mêmes conditions ont été appliquées à tous les modèles pour assurer une comparaison équitable.
 
-Petit rappel, voici les modèles que j,ai utilisé pour cette étape d'entrainement avec leurs caractéristiques principales:
+Petit rappel, voici les modèles que j'ai utilisés pour cette étape d'entrainement avec leurs caractéristiques principales:
 
 ### EfficientNet‑B3 / B4
 - **Backbone** : MBConv + Squeeze‑and‑Excitation  
@@ -57,10 +57,10 @@ Pour un bon entrainement, il est important de préparer les données de manière
 
 Au cours de l'entrainement, j'ai monitoré les différentes métriques d’entrainement, telles que la précision et la perte, à l'aide d'outils de monitoring disponible en ligne (discuter plsu en détail dans la section suivante). J'ai également utilisé des techniques de visualisation pour mieux comprendre les performances de mes modèles, comme les courbes d'apprentissage et les matrices de confusion. Comme l'apprentissage est une tâche gourmande en ressources, j'ai utilisé les GPU disponibles sur Google Colab pour accélérer le processus d'entrainement et réduire le temps nécessaire pour obtenir des résultats significatifs.
 
-Comme discuté dans l'introduction, j,ai utilisé la technique de trnasfert learning pour adapter les modèles pré-entrainés à mon dataset de plantes. Cette technique m'a permis de bénéficier des caractéristiques visuelles déjà apprises par ces modèles sur ImageNet, tout en adaptant la partie de classification à mon dataset de plantes. J'ai également utilisé le fine-tuning pour permettre au modèle d'ajuster ses caractéristiques visuelles aux spécificités de mon dataset de plantes, ce qui a permis d'améliorer les performances de mes modèles. L'entrianement a donc été divisé en deux étapes: 
+Comme décrit dans l'introduction, j'ai utilisé la technique du transfer learning pour adapter les modèles pré-entraînés à mon dataset de plantes. Cette technique permet de bénéficier des caractéristiques visuelles déjà apprises sur ImageNet, tout en adaptant la tête de classification au dataset cible. Le fine-tuning permet ensuite d'affiner l'ensemble des poids du modèle pour les spécificités visuelles des plantes. L'entraînement a donc été divisé en deux phases :
 
-- D'abord entrainer la queue du modèle en gardant la tête gelée pour 5 epochs, 
-- Suivi d'un fine-tuning de l'ensemble du modèle (tête + queue) avec un taux d'apprentissage réduit pour permettre au modèle d'ajuster ses caractéristiques visuelles aux spécificités de mon dataset de plantes sans perdre les connaissances acquises pour 15 epochs.
+- **Phase 1** : entraînement de la tête de classification uniquement, le backbone restant gelé — 5 epochs.
+- **Phase 2** : fine-tuning de l'ensemble du modèle (backbone + tête) avec un taux d'apprentissage réduit — 15 epochs.
 
 ![Training inital](../figures/training_initial.png)
 ##### Figure 1 : Courbes d'apprentissage de la précision et de la perte pour les modèles entrainés. On observe que les modèles convergent vers une précision élevée et une perte faible au fil des epochs, avec quelques variations entre les modèles.

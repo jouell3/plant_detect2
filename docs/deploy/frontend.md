@@ -13,80 +13,108 @@ nav_order: 2
 
 ### **Introduction**
 <br>
-L'objectif de ce module est de déployer les modèles de classification de plantes que j'ai entrainé dans les étapes précédentes, pour permettre une utilisation facile et intuitive des modèles par des personnes qui n'ont aucune connaissance technique. Pour ce faire, j'ai choisi d'utiliser Streamlit, une bibliothèque Python qui permet de créer des applications web interactives de manière simple et rapide. Streamlit est particulièrement adapté pour les projets de machine learning, car il offre une intégration facile avec les bibliothèques de data science et de machine learning en Python, ainsi que des fonctionnalités pour afficher des graphiques, des images et des widgets interactifs. En utilisant Streamlit, j'ai pu créer une interface utilisateur qui permet aux utilisateurs de télécharger des images de plantes, de faire des prédictions avec les modèles de classification de plantes, et d'afficher les résultats de manière claire et intuitive. Cette interface utilisateur rend les modèles de classification de plantes accessibles à un large public, et permet à chacun de bénéficier des résultats de mon travail de manière simple et efficace.
+L'objectif de ce module est de déployer les modèles de classification de plantes entraînés dans les étapes précédentes, pour permettre une utilisation facile et intuitive par des personnes sans connaissance technique. Pour ce faire, j'ai choisi d'utiliser Streamlit, une bibliothèque Python qui permet de créer des applications web interactives de manière simple et rapide, avec une intégration native des outils de data science. L'interface utilisateur permet de téléverser des images de plantes, d'obtenir des prédictions et d'afficher les résultats de manière claire et intuitive.
 
 <br>
 
 ### **Processus de création de l'interface utilisateur**
 <br>
 
-La première étape a été de configuer mon répertoire pour permettre le développment de mon frontend de façon efficace et professionnelle. Pour ce faire, j'ai isolé tout mon code de frontend dans un répertoire dédié, ce qui m'a permis de mieux organiser mon projet et de faciliter le développement de l'interface utilisateur. 
+La première étape a été de configurer le répertoire pour permettre le développement du frontend de façon efficace. Tout le code frontend est isolé dans un répertoire dédié `frontend/`, ce qui facilite le développement et le déploiement indépendant de cette couche.
 
 <br>
 
-L'application Streamlit permet d'avoir plusieurs pages indépendantes et une navigation fluide entre elles avec un système de navigation intégré mais pour ce faire, il faut créer un fichier "pages" contenant le script pour les différentes pages de l'application (Script python et le nom des pages est utilisé par Streamlit pour les afficher dans le navigateur). On doit également créer un fichier "main.py" qui sert de point d'entrée pour l'application Streamlit, et qui contient le code pour la page d'accueil de l'application. Finalement, pour que l'application fonctionne bien, il est impératif de créer un fichier "requirements.txt" pour spécifier les dépendances nécessaires pour exécuter l'application Streamlit une fois déployée sur Streamlit Cloud.
+L'application Streamlit permet d'avoir plusieurs pages indépendantes avec un système de navigation intégré. Il faut pour cela créer un répertoire `pages/` contenant les scripts de chaque page (le nom du fichier est utilisé par Streamlit comme titre de la page), un fichier `main.py` servant de point d'entrée, et un fichier `requirements.txt` pour les dépendances au déploiement sur Streamlit Cloud.
 
-J'ai voulu garder l'application le plus simple possible. L'application possède que 4 pages:
+L'application possède 4 pages :
 
-- La page d'acceuil de l'application, qui détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes.
-- La page pour faire une prédiction de classification de plantes à partir d'une image téléchargée ou prise avec la caméra du téléphone. 
-- La page pour faire des prédictions de classification de plantes en batch à partir de plusieurs images téléchargées.
-- La page pour le monitoring en temps réel des performances du modèle de classification de plantes en production.
-
-<br>
-
-### **Détails de pages de l'application Streamlit**
-<br>
-
-La page d'acceuil détail les différentes fonctionnalité de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes. La deuxième page de l'application permet à l'utilisateur de soit télécharger une image de plante, soit de prendre une image avec la caméra de son téléphone. Une fois cette image téléchargée, l'utilisateur peut faire une prédiction avec les modèles de classification de plantes, et afficher les résultats de manière claire et intuitive. Même si les résultats des tests de performances des différents modèles de classification montre que le modèle le plus performant est le modèle Convnext_tiny, j'ai quand même décidé d'inclure les autres modèles à titre comparatif pour l'utilisateur un peu plus curieux et intéressé par les détails techniques de l'application et surtout des performances de chacun de ces modèles. Je suis conscient que cette architecture peut porter à confusion pour les utilisateurs qui ne sont pas familiers avec les modèles de machine learning, mais j'ai voulu offrir une expérience utilisateur complète et transparente en montrant les résultats de tous les modèles de classification de plantes que j'ai entrainé, même si certains d'entre eux sont moins performants que d'autres. De plus, cela permet à l'utilisateur de mieux comprendre les différences entre les différents modèles de classification de plantes, et de faire un choix éclairé en fonction de ses besoins et de ses préférences. 
+- La page d'accueil, qui détaille les fonctionnalités de l'application et explique comment l'utiliser.
+- La page de prédiction simple, à partir d'une image téléversée ou prise avec la caméra.
+- La page de prédiction en batch, pour traiter plusieurs images simultanément.
+- La page de monitoring en temps réel des performances du modèle en production.
 
 <br>
 
-Il est aussi possible de faire des prédictions en batch à partir de plusieurs images téléchargées, ce qui permet à l'utilisateur de traiter un grand nombre d'images de plantes en une seule fois, et d'obtenir les résultats de manière rapide et efficace. Il y a 2 façons de faire des prédictions en batch: soit en envoyant les images une par une, soit en les envoyant toutes en même temps (elles seront traitées par batch de 20 par le backend pour permettre un affichage plus rapide des résultats. La page sera rafraichie à chaque fois que les résultats du prochain batch de 20 images sont disponibles).
+### **Détails des pages de l'application Streamlit**
+<br>
+
+La page de prédiction simple permet à l'utilisateur de téléverser une image ou de la prendre avec la caméra de son téléphone. Une fois l'image soumise, les résultats des 5 modèles sont affichés côte à côte. Même si ConvNeXt-Tiny est le modèle le plus performant, les autres modèles sont inclus à titre comparatif pour les utilisateurs souhaitant explorer les différences de performance entre architectures. Lorsque la plante est identifiée, une fiche descriptive s'affiche avec des conseils de culture et, si la plante est comestible, des suggestions de recettes.
 
 <br>
 
-Finalement, la page de monitoring en temps réel des performances du modèle de classification de plantes en production permet à l'utilisateur de suivre les différentes prédictions faites par le modèle, ainsi que les différentes métriques de performance (surtout au niveau de la précision et de la confiance) pour chaque classe, en affichant ces informations de manière claire et intuitive pour permettre à l'utilisateur de mieux comprendre les performances du modèle en production.
+Il est également possible de faire des prédictions en batch à partir de plusieurs images téléversées. Les images sont traitées par lots de 20 par le backend, et la page se rafraîchit à chaque fois que les résultats du lot suivant sont disponibles.
 
 <br>
 
-Voici un example de chacune des pages de l'application Streamlit que j'ai développée pour la classification d'images de plantes: 
+La page de monitoring permet de suivre en temps réel les prédictions faites par le modèle, la confiance moyenne par classe et la latence des requêtes — données récupérées depuis le backend via l'endpoint `/metrics` et rafraîchies toutes les 10 secondes.
+
+<br>
+
+Voici un exemple de chacune des pages de l'application :
 
 <br>
 
 ![Frontend main page](../figures/frontend_main.png)
-##### Figure 1 : Page d'acceuil de l'application Streamlit pour la classification d'images de plantes. cette page détaille les différentes fonctionnalités de l'application et explique comment utiliser l'application pour faire la classification d'images de plantes.
+##### Figure 1 : Page d'accueil de l'application Streamlit.
 
 
 <br><br>
 ![Page single prediction](../figures/page1.png)
 
 
-##### Figure 2 : Page de l'application Streamlit pour faire une prédiction de classification de plantes à partir d'une image téléchargée ou prise avec la caméra du téléphone. L'utilisateur peut faire une prédiction avec les modèles de classification de plantes, et afficher les résultats de manière claire et intuitive. Lorsque la plante est identifiée, on appercois une fiche descriptive de cette plante avec quelques conseils de culture et si la plante est commestible, il y a même des sugegstions de recettes. Finallement, pour les utilisateurs plus curieux, il est possible de visualiser les différentes classes de plantes que le modèle a identifié, ainsi que les différentes probabilités associées à chaque classe.
+##### Figure 2 : Page de prédiction simple. L'utilisateur peut téléverser une image ou utiliser la caméra. Les résultats des 5 modèles s'affichent avec une fiche descriptive de la plante identifiée, des conseils de culture et des suggestions de recettes si la plante est comestible.
 
 <br><br>
 
 ![Prediction en batch](../figures/page2.png)
 
-##### Figure 3 : Page de l'application Streamlit pour faire des prédictions de classification de plantes en batch à partir de plusieurs images téléchargées. L'utilisateur peut faire des prédictions avec les modèles de classification de plantes soit en envoyant les images une par une, soit en les envoyant toutes en même temps (elles seront traitées par batch de 20 par le backend pour permettre un affichage plus rapide des résultats. La page sera rafraichie à chaque fois que les résultats du prochain batch de 20 images sont disponibles).
+##### Figure 3 : Page de prédiction en batch. Les images sont traitées par lots de 20 ; la page se rafraîchit à chaque lot.
 
 <br><br>
 
 ![Page monitoring](../figures/page_monitoring.png)
 
-##### Figure 4 : Page de l'application Streamlit pour le monitoring en temps réel des performances du modèle de classification de plantes en production. Cette page permet à l'utilisateur de suivre les différentes prédictions faites par le modèle, ainsi que les différentes métriques de performance (surtout au niveau de la précision et de la confiance) pour chaque classe, en affichant ces informations de manière claire et intuitive pour permettre à l'utilisateur de mieux comprendre les performances du modèle en production.
+##### Figure 4 : Page de monitoring en temps réel — prédictions récentes, confiance par classe et latence des requêtes.
 
+
+### **Vote majoritaire pondéré**
+
+<br>
+
+Pour les pages de prédiction simple et batch, les résultats des 5 modèles sont agrégés via un **vote majoritaire pondéré** (*weighted majority vote*). Plutôt que de compter le nombre de modèles qui s'accordent sur la même prédiction, chaque modèle contribue proportionnellement à sa précision de validation :
+
+```python
+WEIGHTS = {
+    "convnext_tiny":     0.954,
+    "efficientnet_b3":   0.929,
+    "efficientnet_b4":   0.928,
+    "mobilenetv3_large": 0.879,
+    "resnet50":          0.862,
+}
+
+def weighted_vote(predictions):
+    scores = defaultdict(float)
+    for item in predictions:
+        w = WEIGHTS[item["model"]]
+        top1 = item["top1"]
+        scores[top1["class"]] += w * top1["confidence"]
+    return max(scores, key=scores.get)
+```
+
+Seule la prédiction top-1 de chaque modèle est prise en compte (et non l'ensemble de la distribution), ce qui est cohérent avec l'endpoint `/predict-batch` qui ne retourne qu'un top-1 par modèle. ConvNeXt-Tiny (95.4 %) pèse donc davantage que ResNet-50 (86.2 %) dans le résultat final. Le score de confiance affiché est la part normalisée du score pondéré de l'espèce gagnante sur la somme totale des scores.
+
+<br>
 
 ### Conclusion
 
 <br>
 
-En conclusion, la création d'une interface utilisateur avec Streamlit pour la classification d'images de plantes a été une étape cruciale pour rendre les modèles de classification de plantes accessibles à un large public. En utilisant Streamlit, j'ai pu créer une application web interactive qui permet aux utilisateurs de télécharger des images de plantes, de faire des prédictions avec les modèles de classification de plantes, et d'afficher les résultats de manière claire et intuitive. Cette interface utilisateur offre une expérience agréable et facile à utiliser pour faire la classification d'images de plantes, et permet à chacun de bénéficier des résultats de mon travail de manière simple et efficace.
+L'interface Streamlit rend les modèles de classification accessibles sans aucune connaissance technique. Elle offre trois modes d'utilisation (prédiction simple, batch, monitoring) et s'intègre directement avec le backend FastAPI déployé sur Cloud Run.
 
 
 <br><br><br>
 
 ---
-Il est possible d'accéder à l'application de classification de plantes que j'ai développée en utilisant Streamlit en cliquant sur le lien suivant : 
+Application accessible à l'adresse suivante :
 
-## [Plant detect application](https://plantpredict.streamlit.app/). 
+## [Plant detect application](https://plantpredict.streamlit.app/).

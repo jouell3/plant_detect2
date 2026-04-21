@@ -26,7 +26,7 @@ Les embeddings sont ensuite **normalisés** (StandardScaler) afin de rendre les 
 
 Pour chaque classe (ex : *cosmos*, *fig*, *zinnia*…), j’ai appliqué un clustering KMeans sur les embeddings extraits des images sélectionnées manuellement, un clustering par classe.
 
-Initiallement, j'avais mis qu'un seul cluster par classe, mais cela ne capturait pas toute la diversité d'une classe (ex : différence entre fleurs et feuilles, angles de vue, conditions lumineuses). J'ai donc décidé d'utiliser **4 clusters par classe**, ce qui permet de mieux modéliser la distribution interne de chaque classe (nombre un arbitraire mais pas vu de différence entre 3 et 4 clusters).
+Initialement, j'avais utilisé un seul cluster par classe, mais cela ne capturait pas toute la diversité interne d'une classe (ex : différence entre fleurs et feuilles, angles de vue, conditions lumineuses). J'ai donc opté pour **4 clusters par classe**, ce qui permet de mieux modéliser cette distribution interne (nombre arbitraire — aucune différence significative observée entre 3 et 4 clusters).
 
 Pourquoi par classe ?
 
@@ -40,5 +40,5 @@ Pour chaque classe, je calcule :
 - la distance de chaque nouvelle image de ces centroïdes,
 - un seuil basé sur le percentile 99 * 1.2 de ces distances (vu le faible nombre d'images par classe, je n'ai pas voulu un seuil trop strict).
 
-Pour toute nouvelle image, ce seuil a servi a sélectionner les images pertinentes et éliminer les images trop différentes pour ce cluster.
+Pour toute nouvelle image, ce seuil sert à sélectionner les images pertinentes et à éliminer celles trop éloignées du cluster.
 

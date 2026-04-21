@@ -14,11 +14,9 @@ scikit-learn==1.8.0
 
 python-multipart==0.0.9
 
-google-cloud-storage==2.18.2
-
 loguru==0.7.2
 
-wandb>=0.17.0
+wandb==0.26.0
 
 python-dotenv>=1.0.0
 
