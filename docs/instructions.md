@@ -77,15 +77,6 @@ export WANDB_API_KEY=<votre clé depuis wandb.ai/settings>
 export WANDB_PROJECT=certification
 export WANDB_ENTITY=<votre utilisateur wandb>
 ```
-
-Pour le développement local avec Docker, l'authentification GCP est également nécessaire :
-
-```bash
-gcloud auth login
-gcloud auth application-default login
-gcloud config set project bootcamparomatic
-```
-
 ---
 
 ## 4. Lancer le backend en local
