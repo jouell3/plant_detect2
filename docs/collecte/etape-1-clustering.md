@@ -5,7 +5,7 @@ parent: "Collecte des données"
 nav_order: 2
 ---
 
-# 🧩 Étape 1 — Clustering par classe (KMeans)
+# Étape 1 — Clustering par classe (KMeans)
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "Étape 4 — XGBoost multi-classe"
+title: "Étape 3 — XGBoost multi-classe"
 parent: "Collecte des données"
 nav_order: 4
 ---
@@ -62,6 +62,7 @@ Voici la matrice de confusion obtenue pour ce modèle de classification multi‑
 <br><br>
 
 Voici le résumé global des métriques d’évaluation pour le modèle de classification multi‑classe basé sur les embeddings :
+
 | Metric        | Precision | Recall | F1‑Score | Support |
 |---------------|-----------|--------|----------|---------|
 | Accuracy      | —         | —      | 0.79     | 1601    |

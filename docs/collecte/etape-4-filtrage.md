@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Étape 5 — Filtrage automatique"
+title: "Étape 4 — Filtrage automatique"
 parent: "Collecte des données"
 nav_order: 5
 ---
 
-# Étape 5 — Filtrage automatique des nouvelles images
+# Étape 4 — Filtrage automatique des nouvelles images
 
 ## Objectif
 

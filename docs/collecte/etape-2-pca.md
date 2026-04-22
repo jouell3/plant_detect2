@@ -1,11 +1,11 @@
 ---
 layout: default
-title: "Étape 3 — Visualisation PCA"
+title: "Étape 2 — Visualisation PCA"
 parent: "Collecte des données"
 nav_order: 3
 ---
 
-# 🧩 Étape 3 — Visualisation PCA
+# Étape 2 — Visualisation PCA
 
 Pour valider visuellement la cohérence des clusters, j’ai appliqué une réduction de dimension (PCA) sur l’ensemble des embeddings.
 

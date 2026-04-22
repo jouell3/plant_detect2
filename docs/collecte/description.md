@@ -7,7 +7,7 @@ nav_order: 1
 
 
 
-# 🧩 **Filtrage automatique des images qui serviront à l'entraînement des modèles (Data-Centric AI)**
+# **Filtrage automatique des images qui serviront à l'entraînement des modèles (Data-Centric AI)**
 
 ## **Objectif**
 
