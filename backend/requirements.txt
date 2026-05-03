@@ -16,7 +16,5 @@ python-multipart==0.0.9
 
 loguru==0.7.2
 
-wandb==0.26.0
-
 python-dotenv>=1.0.0
 

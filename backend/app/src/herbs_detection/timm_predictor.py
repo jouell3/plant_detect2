@@ -19,7 +19,7 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 class TimmPredictor:
-    """Load a timm model from a wandb artifact and expose predict_top3/predict_set."""
+    """Load a timm model from a local artifact directory and expose predict_top3/predict_set."""
 
     def __init__(self, cfg: ModelConfig, cache_root: Path | None = None):
         self._cfg        = cfg
@@ -41,13 +41,13 @@ class TimmPredictor:
         try:
             local_dir = artifact_local_path(self._cfg.wandb_artifact, self._cache_root)
 
-            # Check model artifact dir first, then fall back to shared preprocessor artifact
+            # Check the model artifact dir first, then fall back to the shared local label encoder.
             encoder_files = list(local_dir.glob("*.pkl"))
             if not encoder_files:
                 shared_dir = label_encoder_local_path(self._cache_root)
                 encoder_files = list(shared_dir.glob("*.pkl"))
             if encoder_files:
-                # sklearn LabelEncoder requires pickle — source is our own wandb registry
+                # sklearn LabelEncoder requires pickle.
                 with open(encoder_files[0], "rb") as f:
                     le = pickle.load(f)  # noqa: S301
                 self._classes = list(le.classes_)
